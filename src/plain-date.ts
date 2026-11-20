@@ -116,19 +116,67 @@ export function toISO(date: PlainDate): string {
   return `${String(date.year).padStart(4, '0')}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`;
 }
 
-/** Parse a strict `YYYY-MM-DD` string. */
-export function fromISO(iso: string): PlainDate {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+/**
+ * ISO 8601 inputs accepted at the API boundary. Either a strict calendar date
+ * (`YYYY-MM-DD`) or a full datetime (`YYYY-MM-DDTHH:mm[:ss[.sss]]` with an
+ * optional `Z`/`±HH:mm` offset). A space separator, a missing date part or a
+ * missing time is deliberately rejected.
+ */
+const ISO_PATTERN =
+  /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,9}))?)?(Z|[+-]\d{2}:\d{2})?)?$/;
+
+/**
+ * Parse a strict `YYYY-MM-DD` or a full ISO datetime.
+ *
+ * A date-only string is a plain calendar date and never crosses a time zone.
+ * An offset-less datetime is a wall-clock time in `timeZone`, so its calendar
+ * date is the date part. A datetime carrying `Z` or a numeric offset denotes
+ * an instant: it is converted to `timeZone` before the calendar date is taken,
+ * exactly like a JavaScript `Date` crossing the API boundary.
+ */
+export function fromISO(iso: string, timeZone: string = DEFAULT_TIME_ZONE): PlainDate {
+  const match = ISO_PATTERN.exec(iso);
   if (match === null) {
-    throw new RangeError(`invalid ISO date (expected YYYY-MM-DD): ${iso}`);
+    throw new RangeError(`invalid ISO date (expected YYYY-MM-DD or ISO datetime): ${iso}`);
   }
   const year = match[1];
   const month = match[2];
   const day = match[3];
   if (year === undefined || month === undefined || day === undefined) {
-    throw new RangeError(`invalid ISO date (expected YYYY-MM-DD): ${iso}`);
+    throw new RangeError(`invalid ISO date (expected YYYY-MM-DD or ISO datetime): ${iso}`);
   }
-  return plainDate(Number(year), Number(month), Number(day));
+  const plain = plainDate(Number(year), Number(month), Number(day));
+  const hourText = match[4];
+  if (hourText === undefined) {
+    return plain;
+  }
+  const minuteText = match[5];
+  const secondText = match[6] ?? '00';
+  const fraction = match[7] ?? '';
+  const offset = match[8];
+  if (minuteText === undefined) {
+    throw new RangeError(`invalid ISO datetime: ${iso}`);
+  }
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  const second = Number(secondText);
+  if (hour > 23 || minute > 59 || second > 59) {
+    throw new RangeError(`invalid ISO datetime time fields: ${iso}`);
+  }
+  // Validate the zone even for offset-less datetimes so an invalid IANA name
+  // is rejected at the boundary rather than silently ignored.
+  getFormatter(timeZone);
+  if (offset === undefined) {
+    return plain;
+  }
+  const instantText = `${year}-${month}-${day}T${hourText}:${minuteText}:${secondText}${
+    fraction === '' ? '' : `.${fraction}`
+  }${offset}`;
+  const milliseconds = Date.parse(instantText);
+  if (Number.isNaN(milliseconds)) {
+    throw new RangeError(`invalid ISO datetime: ${iso}`);
+  }
+  return fromDate(new Date(milliseconds), timeZone);
 }
 
 function getFormatter(timeZone: string): Intl.DateTimeFormat {
@@ -155,6 +203,11 @@ function getFormatter(timeZone: string): Intl.DateTimeFormat {
   }
   formatters.set(timeZone, formatter);
   return formatter;
+}
+
+/** Validate an IANA time-zone name at an API boundary; throws `RangeError` if unknown. */
+export function assertTimeZone(timeZone: string): void {
+  getFormatter(timeZone);
 }
 
 function partsInZone(date: Date, timeZone: string): ZonedParts {

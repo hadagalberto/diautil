@@ -16,15 +16,20 @@ type PlainDate = { readonly year: number; readonly month: number; readonly day: 
 ```
 
 Intervalo suportado: anos **1900–2199** (gregoriano proléptico). Na fronteira da API, objetos
-`Date` são interpretados em **America/Sao_Paulo** por padrão (configurável em `fromDate`/`toDate`) e
-strings `YYYY-MM-DD` estritas são aceitas. Dias da semana são calculados aritmeticamente
-(0 = domingo).
+`Date` são interpretados em **America/Sao_Paulo** por padrão; aceitamos strings `YYYY-MM-DD`
+estritas e também datas e horas ISO completas (`YYYY-MM-DDTHH:mm[:ss[.sss]][Z|±HH:mm]`). Todas as
+APIs com opções expõem o campo `timeZone` (nome IANA), validado na fronteira. Um datetime com offset
+explícito é convertido para esse fuso antes de se extrair a data; um datetime sem offset é lido como
+hora local nesse fuso. `fromDate`/`toDate` recebem o mesmo fuso como segundo argumento. Dias da
+semana são calculados aritmeticamente (0 = domingo).
 
 ```ts
 import { fromISO, plainDate, toISO } from 'diautil';
 
 fromISO('2024-03-31'); // Páscoa de 2024
 toISO(plainDate(2024, 2, 29)); // '2024-02-29'
+fromISO('2024-03-31T00:00:00Z', 'UTC'); // { year: 2024, month: 3, day: 31 }
+fromISO('2024-03-31T00:00:00Z', 'America/Sao_Paulo'); // { year: 2024, month: 3, day: 30 }
 ```
 
 ## Feriados
@@ -49,7 +54,9 @@ nacionais. Inclua explicitamente com `include: ['optional']`.
 
 O calendário é a união dos escopos selecionados. `uf` adiciona os feriados estaduais e `city` os
 feriados municipais da capital; `include` filtra por tipo. Nomes de capitais são comparados sem
-diferenciar maiúsculas e acentos.
+diferenciar maiúsculas e acentos. `uf` e `city` precisam ser compatíveis: cada capital pertence a
+uma única UF, então `holidays(2026, { uf: 'RJ', city: 'São Paulo' })` lança `RangeError` em vez de
+misturar feriados estaduais do RJ com feriados municipais de SP.
 
 ```ts
 holidays(2026, { uf: 'SP' });
@@ -128,6 +135,13 @@ import {
 isBusinessDay('2026-11-20'); // false — Zumbi, feriado nacional desde 2024
 addBusinessDays('2026-11-19', 1); // 2026-11-23
 addBusinessDays('2026-11-21', 0, { roll: 'backward' }); // 2026-11-19
+// IMPORTANTE: businessDaysBetween conta o INTERVALO ABERTO (a, b) por padrão —
+// nenhuma das duas datas entra na contagem. Isso difere de bibliotecas que
+// incluem um ou ambos os extremos. Use { inclusive: true } para contar [a, b].
+businessDaysBetween('2026-11-19', '2026-11-23'); // 0  — 20/11 feriado, 21–22 fim de semana
+businessDaysBetween('2026-11-19', '2026-11-23', { inclusive: true }); // 2  — 19 e 23
+businessDaysBetween('2026-11-19', '2026-11-19'); // 0
+businessDaysBetween('2026-11-19', '2026-11-19', { inclusive: true }); // 1
 businessDaysBetween('2026-11-19', '2026-11-25', { inclusive: true }); // 4
 nthBusinessDayOfMonth(2026, 12, 5); // 2026-12-07 — 5º dia útil seg–sex
 quintoDiaUtilSalario(2026, 12); // 2026-12-05 — prazo legal de pagamento (CLT art. 459, § 1º)

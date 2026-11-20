@@ -10,7 +10,9 @@
  * facultativo) opt-in.
  */
 import {
+  assertTimeZone,
   compareDates,
+  DEFAULT_TIME_ZONE,
   fromDate,
   fromISO,
   isPlainDate,
@@ -19,7 +21,7 @@ import {
   type PlainDate,
 } from '../plain-date.js';
 import { deduplicateHolidays } from './dedupe.js';
-import { canonicalCapital, isUF, type UF } from './geo.js';
+import { canonicalCapital, isUF, ufOfCapital, type UF } from './geo.js';
 import { municipalRulesByCapital } from './municipal.js';
 import { customaryNationalRules, nationalRules } from './national.js';
 import { evaluateRules } from './rules.js';
@@ -42,23 +44,34 @@ export interface HolidayOptions {
    * religious holiday, so `isHoliday('2026-04-03')` is false without a city.
    */
   readonly includeCustomaryNational?: boolean;
+  /**
+   * IANA time zone used when a `Date` or an offset-bearing ISO datetime crosses
+   * the API boundary. Defaults to `America/Sao_Paulo`. Date-only strings and
+   * `PlainDate` values are unaffected.
+   */
+  readonly timeZone?: string;
 }
 
 const DEFAULT_INCLUDE: readonly HolidayType[] = ['national', 'state', 'municipal'];
 const yearCache = new Map<string, Holiday[]>();
 
+/** Time zone configured for an options object, or the library default. */
+function timeZoneOf(options: HolidayOptions): string {
+  return options.timeZone ?? DEFAULT_TIME_ZONE;
+}
+
 /** Normalize any accepted input into a validated `PlainDate`. */
-export function toPlainDate(input: DateInput): PlainDate {
+export function toPlainDate(input: DateInput, timeZone: string = DEFAULT_TIME_ZONE): PlainDate {
   if (isPlainDate(input)) {
     return input;
   }
   if (typeof input === 'string') {
-    return fromISO(input);
+    return fromISO(input, timeZone);
   }
   if (input instanceof Date) {
-    return fromDate(input);
+    return fromDate(input, timeZone);
   }
-  throw new TypeError('expected a PlainDate, an ISO YYYY-MM-DD string or a Date');
+  throw new TypeError('expected a PlainDate, an ISO date/datetime string or a Date');
 }
 
 function includedTypes(options: HolidayOptions): ReadonlySet<HolidayType> {
@@ -70,12 +83,25 @@ function canonicalCity(options: HolidayOptions): string | undefined {
   if (options.uf !== undefined && !isUF(options.uf)) {
     throw new RangeError(`unknown UF: ${String(options.uf)}`);
   }
+  if (options.timeZone !== undefined) {
+    assertTimeZone(options.timeZone);
+  }
   if (options.city === undefined) {
     return undefined;
   }
   const city = canonicalCapital(options.city);
   if (city === undefined) {
     throw new RangeError(`unknown capital city: ${options.city}`);
+  }
+  // A capital is the seat of exactly one UF. Mixing scopes would silently
+  // combine, e.g., RJ state rules with São Paulo municipal rules.
+  if (options.uf !== undefined) {
+    const cityUf = ufOfCapital(city);
+    if (cityUf !== options.uf) {
+      throw new RangeError(
+        `capital city ${city} belongs to UF ${String(cityUf)}, not ${options.uf}`,
+      );
+    }
   }
   return city;
 }
@@ -99,7 +125,7 @@ export function rulesForOptions(options: HolidayOptions = {}): HolidayRule[] {
 function cacheKey(year: number, options: HolidayOptions, city: string | undefined): string {
   const include = options.include === undefined ? '' : [...options.include].sort().join(',');
   const customary = options.includeCustomaryNational === true ? 'customary' : '';
-  return `${year}|${options.uf ?? ''}|${city ?? ''}|${include}|${customary}`;
+  return `${year}|${options.uf ?? ''}|${city ?? ''}|${include}|${customary}|${timeZoneOf(options)}`;
 }
 
 function allHolidaysInYear(
@@ -137,7 +163,7 @@ export function holidays(year: number, options: HolidayOptions = {}): Holiday[] 
 
 /** All holidays falling exactly on `date`. */
 export function findHolidays(date: DateInput, options: HolidayOptions = {}): Holiday[] {
-  const plain = toPlainDate(date);
+  const plain = toPlainDate(date, timeZoneOf(options));
   return holidays(plain.year, options).filter((holiday) => compareDates(holiday.date, plain) === 0);
 }
 
@@ -161,7 +187,7 @@ export function holidayName(
 
 /** First holiday strictly after `date`, or `undefined` at the end of the range. */
 export function nextHoliday(date: DateInput, options: HolidayOptions = {}): Holiday | undefined {
-  const plain = toPlainDate(date);
+  const plain = toPlainDate(date, timeZoneOf(options));
   for (let year = plain.year; year <= MAX_YEAR; year += 1) {
     const found = holidays(year, options).find((holiday) => compareDates(holiday.date, plain) > 0);
     if (found !== undefined) {

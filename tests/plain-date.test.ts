@@ -88,10 +88,27 @@ describe('ISO conversion', () => {
     expect(toISO(plainDate(1961, 4, 2))).toBe('1961-04-02');
   });
 
+  it('parses full ISO datetimes using the configured time zone', () => {
+    // 2024-03-31T00:00:00Z is 2024-03-30 21:00 in America/Sao_Paulo (UTC-03,
+    // DST abolished in 2019) and 2024-03-31 00:00 in UTC. Both are hand-derived
+    // from the UTC offset, not from the library.
+    expect(fromISO('2024-03-31T00:00:00Z', 'America/Sao_Paulo')).toEqual({
+      year: 2024,
+      month: 3,
+      day: 30,
+    });
+    expect(fromISO('2024-03-31T00:00:00Z', 'UTC')).toEqual({ year: 2024, month: 3, day: 31 });
+    // An offset-less datetime is wall-clock time in the configured zone.
+    expect(fromISO('2026-11-20T10:00:00')).toEqual({ year: 2026, month: 11, day: 20 });
+  });
+
   it.each([
     '2024-3-31',
     '2024/03/31',
-    '2024-03-31T00:00:00Z',
+    // '2024-03-31T00:00:00Z' was previously listed here. That assertion encoded
+    // the reviewed bug: full ISO datetimes must be accepted (review finding,
+    // "ISO parser rejects strings with time"), so it moved to the accept test
+    // below with a hand-derived expected value.
     '1899-01-01',
     '2200-01-01',
     '2024-02-30',

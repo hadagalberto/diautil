@@ -4,6 +4,7 @@
  */
 import {
   addBusinessDays,
+  assertTimeZone,
   businessDaysBetween,
   fromISO,
   holidays,
@@ -25,11 +26,11 @@ const VERSION = '0.1.0';
 const HELP = `diautil ${VERSION} — feriados e calendário brasileiro
 
 Uso:
-  diautil feriados <ano> [--uf UF] [--cidade NOME] [--customarios] [--json]
-  diautil util <data> [--uf UF] [--cidade NOME] [--calendario civil|bancario] [--json]
-  diautil soma <data> <n> [--calendario civil|bancario] [--json]
-  diautil entre <inicio> <fim> [--uf UF] [--cidade NOME] [--inclusive] [--json]
-  diautil quinto-dia-util <YYYY-MM> [--uf UF] [--cidade NOME] [--json]
+  diautil feriados <ano> [--uf UF] [--cidade NOME] [--customarios] [--timezone ZONA] [--json]
+  diautil util <data> [--uf UF] [--cidade NOME] [--calendario civil|bancario] [--timezone ZONA] [--json]
+  diautil soma <data> <n> [--calendario civil|bancario] [--timezone ZONA] [--json]
+  diautil entre <inicio> <fim> [--uf UF] [--cidade NOME] [--inclusive] [--timezone ZONA] [--json]
+  diautil quinto-dia-util <YYYY-MM> [--uf UF] [--cidade NOME] [--timezone ZONA] [--json]
   diautil --version
 
 Opções:
@@ -38,11 +39,17 @@ Opções:
   --calendario T   calendário: civil (padrão) ou bancario
   --inclusive      conta as duas datas em "entre"
   --customarios    inclui a Sexta-feira da Paixão como feriado nacional costumeiro
+  --timezone ZONA  fuso IANA para datas ISO com hora/offset (padrão: America/Sao_Paulo)
   --json           saída legível por máquina
   -h, --help       mostra esta ajuda
 `;
 
-const VALUE_FLAGS: ReadonlySet<string> = new Set(['--uf', '--cidade', '--calendario']);
+const VALUE_FLAGS: ReadonlySet<string> = new Set([
+  '--uf',
+  '--cidade',
+  '--calendario',
+  '--timezone',
+]);
 
 interface ParsedArgs {
   readonly positionals: readonly string[];
@@ -92,6 +99,18 @@ function readUf(flags: ReadonlyMap<string, string | true>): UF | undefined {
   return uf;
 }
 
+function readTimeZone(flags: ReadonlyMap<string, string | true>): string | undefined {
+  const raw = flags.get('--timezone');
+  if (raw === undefined) {
+    return undefined;
+  }
+  if (typeof raw !== 'string') {
+    throw new RangeError('--timezone requer um nome de fuso IANA');
+  }
+  assertTimeZone(raw);
+  return raw;
+}
+
 function readCalendarKind(flags: ReadonlyMap<string, string | true>): CalendarKind {
   const raw = flags.get('--calendario');
   if (raw === undefined) {
@@ -107,21 +126,27 @@ function readFlags(flags: ReadonlyMap<string, string | true>): CalendarFlags {
   const uf = readUf(flags);
   const city = flags.get('--cidade');
   const customary = flags.has('--customarios');
+  const timeZone = readTimeZone(flags);
   return {
     calendar: readCalendarKind(flags),
     options: {
       ...(uf === undefined ? {} : { uf }),
       ...(city === undefined || typeof city !== 'string' ? {} : { city }),
       ...(customary ? { includeCustomaryNational: true } : {}),
+      ...(timeZone === undefined ? {} : { timeZone }),
     },
   };
 }
 
-function readDate(value: string | undefined, label: string): DateInput {
+function readDate(
+  value: string | undefined,
+  label: string,
+  timeZone: string | undefined,
+): DateInput {
   if (value === undefined) {
     throw new RangeError(`informe ${label} no formato AAAA-MM-DD`);
   }
-  return fromISO(value);
+  return fromISO(value, timeZone);
 }
 
 function printJson(value: unknown): void {
@@ -181,8 +206,8 @@ function runUtil(positionals: readonly string[], flags: ReadonlyMap<string, stri
   let date: DateInput;
   let parsed: CalendarFlags;
   try {
-    date = readDate(positionals[0], 'a data');
     parsed = readFlags(flags);
+    date = readDate(positionals[0], 'a data', parsed.options.timeZone);
   } catch (error: unknown) {
     fail(error instanceof Error ? error.message : String(error));
     return;
@@ -202,13 +227,13 @@ function runSoma(positionals: readonly string[], flags: ReadonlyMap<string, stri
   let days: number;
   let parsed: CalendarFlags;
   try {
-    date = readDate(positionals[0], 'a data');
+    parsed = readFlags(flags);
+    date = readDate(positionals[0], 'a data', parsed.options.timeZone);
     const raw = positionals[1];
     days = Number(raw);
     if (raw === undefined || !Number.isInteger(days)) {
       throw new RangeError(`número de dias inválido: ${String(raw)}`);
     }
-    parsed = readFlags(flags);
   } catch (error: unknown) {
     fail(error instanceof Error ? error.message : String(error));
     return;
@@ -233,9 +258,9 @@ function runEntre(positionals: readonly string[], flags: ReadonlyMap<string, str
   let end: DateInput;
   let parsed: CalendarFlags;
   try {
-    start = readDate(positionals[0], 'a data inicial');
-    end = readDate(positionals[1], 'a data final');
     parsed = readFlags(flags);
+    start = readDate(positionals[0], 'a data inicial', parsed.options.timeZone);
+    end = readDate(positionals[1], 'a data final', parsed.options.timeZone);
   } catch (error: unknown) {
     fail(error instanceof Error ? error.message : String(error));
     return;

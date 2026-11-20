@@ -10,6 +10,7 @@ import {
   addDays,
   compareDates,
   dayOfWeek,
+  DEFAULT_TIME_ZONE,
   daysInMonth,
   isLeapYear,
   plainDate,
@@ -71,6 +72,7 @@ interface ResolvedCalendar {
   readonly extra: readonly Holiday[];
   readonly removed: ReadonlySet<string>;
   readonly holidayOptions: HolidayOptions;
+  readonly timeZone: string;
 }
 
 function isCustomHoliday(value: ExtraHoliday): value is CustomHoliday {
@@ -83,10 +85,10 @@ function isCustomHoliday(value: ExtraHoliday): value is CustomHoliday {
   );
 }
 
-function customHoliday(entry: ExtraHoliday): Holiday {
+function customHoliday(entry: ExtraHoliday, timeZone: string): Holiday {
   const custom = isCustomHoliday(entry) ? entry : undefined;
   const date: DateInput = isCustomHoliday(entry) ? entry.date : entry;
-  const plain = toPlainDate(date);
+  const plain = toPlainDate(date, timeZone);
   const namePt = custom?.namePt ?? 'Feriado personalizado';
   const nameEn = custom?.nameEn ?? 'Custom holiday';
   const law = custom?.law ?? 'createCalendar: extraHolidays';
@@ -125,12 +127,13 @@ function calendarKey(options: CalendarOptions): string {
   const include =
     options.include === undefined ? '*' : `[${[...options.include].sort().join(',')}]`;
   const weekends = [...(options.weekends ?? DEFAULT_WEEKENDS)].sort((a, b) => a - b).join(',');
+  const timeZone = options.timeZone ?? DEFAULT_TIME_ZONE;
   const extra = (options.extraHolidays ?? [])
-    .map((entry) => toISO(customHoliday(entry).date))
+    .map((entry) => toISO(customHoliday(entry, timeZone).date))
     .sort()
     .join(',');
   const removed = (options.removeHolidays ?? [])
-    .map((date) => toISO(toPlainDate(date)))
+    .map((date) => toISO(toPlainDate(date, timeZone)))
     .sort()
     .join(',');
   const city = options.city === undefined ? '' : (canonicalCapital(options.city) ?? options.city);
@@ -142,6 +145,7 @@ function calendarKey(options: CalendarOptions): string {
     weekends,
     extra,
     removed,
+    timeZone,
   ].join('|');
 }
 
@@ -151,19 +155,22 @@ function resolveOptions(options: CalendarOptions): ResolvedCalendar {
     ...new Set<Weekday>(options.weekends ?? DEFAULT_WEEKENDS),
   ];
   const weekends = new Set<Weekday>(weekendList);
+  const timeZone = options.timeZone ?? DEFAULT_TIME_ZONE;
   return {
     kind: options.calendar ?? 'civil',
     weekends,
     weekendList,
-    extra: (options.extraHolidays ?? []).map(customHoliday),
+    extra: (options.extraHolidays ?? []).map((entry) => customHoliday(entry, timeZone)),
     removed: new Set<string>(
-      (options.removeHolidays ?? []).map((date) => toISO(toPlainDate(date))),
+      (options.removeHolidays ?? []).map((date) => toISO(toPlainDate(date, timeZone))),
     ),
     holidayOptions: {
       ...(options.uf === undefined ? {} : { uf: options.uf }),
       ...(options.city === undefined ? {} : { city: options.city }),
       ...(options.include === undefined ? {} : { include: options.include }),
+      ...(options.timeZone === undefined ? {} : { timeZone: options.timeZone }),
     },
+    timeZone,
   };
 }
 
@@ -227,11 +234,13 @@ const calendarCache = new Map<string, Calendar>();
 class CalendarImpl implements Calendar {
   readonly options: Readonly<CalendarOptions>;
   private readonly resolved: ResolvedCalendar;
+  private readonly timeZone: string;
   private readonly yearCache = new Map<number, YearData>();
   private readonly fullYearCache = new Map<number, number>();
 
   constructor(source: CalendarOptions) {
     this.resolved = resolveOptions(source);
+    this.timeZone = this.resolved.timeZone;
     const city =
       source.city === undefined ? undefined : (canonicalCapital(source.city) ?? source.city);
     this.options = {
@@ -244,6 +253,7 @@ class CalendarImpl implements Calendar {
       ...(source.removeHolidays === undefined
         ? {}
         : { removeHolidays: [...source.removeHolidays] }),
+      ...(source.timeZone === undefined ? {} : { timeZone: source.timeZone }),
     };
   }
 
@@ -291,7 +301,7 @@ class CalendarImpl implements Calendar {
   }
 
   isBusinessDay(date: DateInput): boolean {
-    const plain = toPlainDate(date);
+    const plain = toPlainDate(date, this.timeZone);
     const data = this.yearData(plain.year);
     return !this.resolved.weekends.has(dayOfWeek(plain)) && !data.holidayDates.has(toISO(plain));
   }
@@ -345,8 +355,8 @@ class CalendarImpl implements Calendar {
     b: DateInput,
     options: BusinessDaysBetweenOptions = {},
   ): number {
-    const first = toPlainDate(a);
-    const second = toPlainDate(b);
+    const first = toPlainDate(a, this.timeZone);
+    const second = toPlainDate(b, this.timeZone);
     const order = compareDates(first, second);
     if (order === 0) {
       return options.inclusive === true && this.isBusinessDay(first) ? 1 : 0;
@@ -385,18 +395,18 @@ class CalendarImpl implements Calendar {
   }
 
   nextBusinessDay(date: DateInput): PlainDate {
-    return this.stepToBusinessDay(toPlainDate(date), 1);
+    return this.stepToBusinessDay(toPlainDate(date, this.timeZone), 1);
   }
 
   previousBusinessDay(date: DateInput): PlainDate {
-    return this.stepToBusinessDay(toPlainDate(date), -1);
+    return this.stepToBusinessDay(toPlainDate(date, this.timeZone), -1);
   }
 
   addBusinessDays(date: DateInput, n: number, options: AddBusinessDaysOptions = {}): PlainDate {
     if (!Number.isInteger(n)) {
       throw new RangeError(`n must be an integer, got ${String(n)}`);
     }
-    const plain = toPlainDate(date);
+    const plain = toPlainDate(date, this.timeZone);
     if (n === 0) {
       if (this.isBusinessDay(plain)) {
         return plain;

@@ -38,6 +38,7 @@ function settlementCalendar(options: CalendarOptions): Calendar {
     ...(options.weekends === undefined ? {} : { weekends: options.weekends }),
     ...(options.extraHolidays === undefined ? {} : { extraHolidays: options.extraHolidays }),
     ...(options.removeHolidays === undefined ? {} : { removeHolidays: options.removeHolidays }),
+    ...(options.timeZone === undefined ? {} : { timeZone: options.timeZone }),
   });
 }
 

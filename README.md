@@ -16,8 +16,12 @@ type PlainDate = { readonly year: number; readonly month: number; readonly day: 
 ```
 
 Supported range: proleptic Gregorian years **1900–2199**. At the API boundary, `Date` objects are
-interpreted in **America/Sao_Paulo** by default (configurable in `fromDate`/`toDate`), and strict
-`YYYY-MM-DD` strings are accepted. Weekdays are computed arithmetically (0 = Sunday).
+interpreted in **America/Sao_Paulo** by default, and both strict `YYYY-MM-DD` strings and full ISO
+datetimes (`YYYY-MM-DDTHH:mm[:ss[.sss]][Z|±HH:mm]`) are accepted. Every options-taking API exposes a
+`timeZone` field (IANA name) to choose the zone; it is validated at the boundary. A datetime with an
+explicit offset is converted to that zone before its calendar date is taken; an offset-less datetime
+is read as wall-clock time in that zone. `fromDate`/`toDate` accept the same zone as a second
+argument. Weekdays are computed arithmetically (0 = Sunday).
 
 ```ts
 import { dayOfWeek, fromDate, fromISO, plainDate, toISO } from 'diautil';
@@ -26,6 +30,8 @@ const easter = fromISO('2024-03-31');
 dayOfWeek(easter); // 0 (Sunday)
 toISO(plainDate(2024, 2, 29)); // '2024-02-29'
 fromDate(new Date('2024-01-01T02:00:00Z')); // { year: 2023, month: 12, day: 31 }
+fromISO('2024-03-31T00:00:00Z', 'UTC'); // { year: 2024, month: 3, day: 31 }
+fromISO('2024-03-31T00:00:00Z', 'America/Sao_Paulo'); // { year: 2024, month: 3, day: 30 }
 ```
 
 ## Holidays
@@ -71,6 +77,10 @@ isHoliday('2026-04-23', { uf: 'RJ' }); // São Jorge — true
 holidayName('2026-04-23', { uf: 'RJ' }, 'en'); // 'Saint George Day'
 nextHoliday('2026-01-25', { city: 'São Paulo' })?.date;
 ```
+
+`uf` and `city` must agree: a capital belongs to exactly one UF, so
+`holidays(2026, { uf: 'RJ', city: 'São Paulo' })` throws a `RangeError` instead of silently mixing
+RJ state rules with São Paulo municipal rules. Matching is case- and accent-insensitive.
 
 Only holidays verified against an official source (state legislature/government or prefeitura)
 are included, each carrying its law number and source URL in the rule metadata and in code
@@ -208,9 +218,21 @@ December 2026 therefore yields `2026-12-05` for the salary deadline but `2026-12
 ordinary Mon–Fri count. Source:
 [gov.br/MTE IN nº 2/2021](https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/inspecao-do-trabalho/areas-de-atuacao/documentos-pdf/in-2-de-8-denovembro-de-2021.pdf).
 
-`addBusinessDays` accepts negative offsets, and `businessDaysBetween` is signed: swapping the
-endpoints negates the result. Months and years are cached per calendar, so counting across a
-century is a cache lookup plus a binary search, not a day-by-day walk.
+**`businessDaysBetween` counts the OPEN interval `(a, b)` by default — this deliberately differs
+from libraries that include one or both endpoints.** Neither endpoint is counted unless it is
+supplied with `{ inclusive: true }`, which counts both endpoints `[a, b]`:
+
+```ts
+businessDaysBetween('2026-11-19', '2026-11-23'); // 0  — 20/11 holiday, 21–22 weekend
+businessDaysBetween('2026-11-19', '2026-11-23', { inclusive: true }); // 2  — 19 and 23
+businessDaysBetween('2026-11-19', '2026-11-19'); // 0
+businessDaysBetween('2026-11-19', '2026-11-19', { inclusive: true }); // 1
+```
+
+`inclusive` is available on `businessDaysBetween`, `createCalendar(...).businessDaysBetween` and
+the CLI's `entre --inclusive`. The result is signed: swapping the endpoints negates it.
+`addBusinessDays` accepts negative offsets. Months and years are cached per calendar, so counting
+across a century is a cache lookup plus a binary search, not a day-by-day walk.
 
 ### Custom calendars
 
@@ -259,7 +281,8 @@ diautil --version
 ```
 
 All commands support `--json` for machine-readable output; `entre` also accepts `--inclusive`,
-and `--customarios` opts into the customary national Good Friday entry. `quinto-dia-util` prints
+`--timezone` selects the IANA zone used for full ISO datetimes, and `--customarios` opts into the
+customary national Good Friday entry. `quinto-dia-util` prints
 both the ordinary Mon–Fri date (`diaUtilSegSex`) and the legal salary date with Saturday counted
 (`diaUtilSalario`). Output is pt-BR by default; `--json` is stable and machine-readable.
 
@@ -270,10 +293,11 @@ npm ci
 npm run check   # typecheck + lint + prettier + build + coverage
 ```
 
-Coverage threshold: 95% lines. CI runs on Node 20, 22 and 24. The checked-in expected table in
-`tests/fixtures/national-2000-2035.json` can be regenerated with
-`npm run build && node scripts/generate-expected-table.mjs` — review the diff against the cited
-laws before committing.
+Coverage threshold: 95% lines. CI runs on Node 20, 22 and 24. The national 2000–2035 expectations
+are **not** generated from the library: `tests/national.test.ts` reconstructs them independently
+from the statutes (fixed dates with their `since` years) and from Gauss's Easter algorithm, plus a
+hand-written ten-year movable-date table cross-checked against the official MGI/Portaria calendar.
+See [`docs/REVIEW-FIXES.md`](docs/REVIEW-FIXES.md) for the independent-review fixes.
 
 ## License
 

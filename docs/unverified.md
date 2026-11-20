@@ -116,3 +116,22 @@ Vista now ship with zero municipal rules.
   operate in ponto facultativo regime on those dates. They remain classified as feriados.
 - **AC, GO, SC, TO, DF** — annual decrees may move the observance of a state feriado. The library
   stores the canonical legal date; year-specific transfers are out of scope for this milestone.
+
+## Milestone 6 — verification of a challenged citation
+
+The independent review asked to verify the RJ Corpus Christi state holiday. It **is** verifiable,
+so the rule stays in [`src/holidays/state.ts`](../src/holidays/state.ts) and is **not** moved here:
+
+- **Lei nº 11.002, de 22 de outubro de 2025** — official Alerj "Texto da Lei" page
+  (http://alerjln1.alerj.rj.gov.br/contlei.nsf/c8aa0900025feef6032564ec0060dfff/46837e4d22b01f3503258d2c0048abda?OpenDocument),
+  checked 2026-11-20. The page shows "Em Vigor com alterações", publication D.O nº 196, and the
+  full text: "Fica instituído, no âmbito do Estado do Rio de Janeiro, o Dia de Corpus Christi como
+  feriado estadual, a ser celebrado na primeira quinta-feira após decorridos sessenta dias do
+  domingo de Páscoa."
+- The same page records ADI 7898 (STF incidente 7434201) as "Declarada Constitucional", with the
+  merits judgment "julgou improcedente o pedido" — matching the note in the rule.
+- "Primeira quinta-feira após decorridos sessenta dias do domingo de Páscoa" is Easter Sunday + 60
+  days (Thursday), the `offset: 60` stored in the rule. The `since: 2025` boundary matches the
+  law's publication year (art. 2º: enters into force on publication).
+
+A regression test in `tests/review-findings.test.ts` pins the citation and the 2025 boundary.

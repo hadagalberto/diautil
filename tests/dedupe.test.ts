@@ -44,15 +44,20 @@ describe('date deduplication — legal precedence and citation merging', () => {
       expect.stringContaining('Lei nº 72'),
     );
 
-    const black = holidays(2026, { uf: 'RJ', city: 'São Paulo' }).filter(
+    // Corrected in milestone 6: the old scope {uf: 'RJ', city: 'São Paulo'}
+    // encoded the reviewed bug — it silently mixed RJ state rules with São
+    // Paulo municipal rules and is now a RangeError. The two declarations are
+    // checked with their own valid scopes instead; no assertion is dropped.
+    const black = holidays(2026, { city: 'São Paulo' }).filter(
       (entry) => toISO(entry.date) === '2026-11-20',
     );
     expect(black).toHaveLength(1);
     expect(black[0]?.type).toBe('national');
-    expect(black[0]?.alsoDeclaredBy?.map((entry) => entry.type).sort()).toEqual([
-      'municipal',
-      'state',
-    ]);
+    expect(black[0]?.alsoDeclaredBy?.map((entry) => entry.type).sort()).toEqual(['municipal']);
+    const rj = holidays(2026, { uf: 'RJ' }).filter((entry) => toISO(entry.date) === '2026-11-20');
+    expect(rj).toHaveLength(1);
+    expect(rj[0]?.alsoDeclaredBy?.map((entry) => entry.type)).toEqual(['state']);
+    expect(() => holidays(2026, { uf: 'RJ', city: 'São Paulo' })).toThrow(RangeError);
   });
 
   it('keeps the caller-selected type when the calendar is filtered', () => {

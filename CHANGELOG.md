@@ -3,6 +3,28 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project does not publish to npm.
 
+## [Unreleased] — Milestone 6
+
+### Fixed
+
+- Reject incompatible `uf`/`city` scopes (e.g. RJ with São Paulo) with `RangeError` instead of
+  silently mixing calendars; matching remains accent/case/whitespace insensitive.
+- Added the missing `timeZone` option to `HolidayOptions` and propagated it through the holiday,
+  business-day, settlement and CLI APIs. Unknown IANA zones now fail at the boundary.
+- `fromISO` accepts full ISO datetimes: offset-less values use the configured zone's wall-clock
+  date, offset-bearing values are converted to that zone.
+- Replaced the circular `dist`-generated 2000–2035 fixture with an independent oracle (statutory
+  fixed dates + Gauss Easter + a hand-written, officially cross-checked ten-year table).
+- Clarified the open-interval semantics of `businessDaysBetween` and its `inclusive` option in both
+  READMEs.
+
+### Verified
+
+- RJ Corpus Christi state holiday (Lei nº 11.002/2025) confirmed on the official Alerj text; the
+  rule, its `since: 2025` boundary and its ADI 7898 note remain unchanged.
+
+See [`docs/REVIEW-FIXES.md`](docs/REVIEW-FIXES.md) for the full regression-test report.
+
 ## [Unreleased] — Milestone 4
 
 ### Added

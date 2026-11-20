@@ -235,6 +235,36 @@ describe('CLI (built binary)', () => {
     expect(runCli(['util', '2026-11-19', '--uf']).stderr).toContain('requer um valor');
   });
 
+  it('rejects a city that belongs to a different UF', () => {
+    const result = runCli(['feriados', '2026', '--uf', 'RJ', '--cidade', 'São Paulo']);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('belongs to UF');
+  });
+
+  it('interprets ISO datetimes in --timezone and validates the zone', () => {
+    // 02:00Z on 20/11/2024 is 19/11 in São Paulo (UTC-03) and 20/11 in UTC.
+    // 20/11 is Zumbi, a national holiday from 2024 (Lei 14.759/2023).
+    interface UtilResult {
+      readonly data: string;
+      readonly util: boolean;
+    }
+    const saoPaulo = runCli(['util', '2024-11-20T02:00:00Z', '--json']);
+    expect(JSON.parse(saoPaulo.stdout) as UtilResult).toEqual({
+      data: '2024-11-19',
+      util: true,
+      calendario: 'civil',
+    });
+    const utc = runCli(['util', '2024-11-20T02:00:00Z', '--timezone', 'UTC', '--json']);
+    expect(JSON.parse(utc.stdout) as UtilResult).toEqual({
+      data: '2024-11-20',
+      util: false,
+      calendario: 'civil',
+    });
+    const invalid = runCli(['util', '2026-11-19', '--timezone', 'Mars/Olympus']);
+    expect(invalid.status).toBe(1);
+    expect(invalid.stderr).toContain('invalid IANA time zone');
+  });
+
   it('keeps Good Friday out of the legal list and inside the banking calendar', () => {
     const legal = runCli(['feriados', '2026', '--json']);
     interface Entry {
