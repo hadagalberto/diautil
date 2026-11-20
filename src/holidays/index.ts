@@ -1,7 +1,13 @@
 /**
- * Public holiday API. Milestone 1 ships national data only; `uf`/`city`
- * calendars are added by later milestones and are deliberately not accepted
- * here yet so the options object cannot silently do nothing.
+ * Public holiday API. Supports national, state (UF) and capital-city
+ * (municipal) calendars with independent `uf`, `city` and `include` filters.
+ *
+ * Scope semantics: the calendar is the union of the scopes selected by the
+ * options. With no `uf`/`city` the calendar is national-only (the milestone-1
+ * behaviour). `uf` adds that unit's state holidays; `city` adds that capital's
+ * municipal holidays. `include` then filters by holiday type; when omitted it
+ * defaults to the three real-holiday types, leaving `optional` (ponto
+ * facultativo) opt-in.
  */
 import {
   compareDates,
@@ -12,20 +18,27 @@ import {
   MAX_YEAR,
   type PlainDate,
 } from '../plain-date.js';
+import { canonicalCapital, isUF, type UF } from './geo.js';
+import { municipalRulesByCapital } from './municipal.js';
 import { nationalRules } from './national.js';
 import { evaluateRules } from './rules.js';
-import type { Holiday, HolidayType, Locale } from './types.js';
+import { stateRulesByUF } from './state.js';
+import type { Holiday, HolidayRule, HolidayType, Locale } from './types.js';
 
 /** Any value accepted by the API boundary. */
 export type DateInput = PlainDate | string | Date;
 
 export interface HolidayOptions {
-  /** Holiday types to consider. Defaults to `['national']`. */
+  /** Federative unit whose state holidays are added to the calendar. */
+  readonly uf?: UF;
+  /** Canonical capital name whose municipal holidays are added to the calendar. */
+  readonly city?: string;
+  /** Holiday types to consider. Defaults to `['national', 'state', 'municipal']`. */
   readonly include?: readonly HolidayType[];
 }
 
-const DEFAULT_INCLUDE: readonly HolidayType[] = ['national'];
-const yearCache = new Map<number, Holiday[]>();
+const DEFAULT_INCLUDE: readonly HolidayType[] = ['national', 'state', 'municipal'];
+const yearCache = new Map<string, Holiday[]>();
 
 /** Normalize any accepted input into a validated `PlainDate`. */
 export function toPlainDate(input: DateInput): PlainDate {
@@ -41,18 +54,56 @@ export function toPlainDate(input: DateInput): PlainDate {
   throw new TypeError('expected a PlainDate, an ISO YYYY-MM-DD string or a Date');
 }
 
-function allHolidaysInYear(year: number): Holiday[] {
-  const cached = yearCache.get(year);
+function includedTypes(options: HolidayOptions): ReadonlySet<HolidayType> {
+  return new Set<HolidayType>(options.include ?? DEFAULT_INCLUDE);
+}
+
+/** Validate scope options and return the canonical capital name, if any. */
+function canonicalCity(options: HolidayOptions): string | undefined {
+  if (options.uf !== undefined && !isUF(options.uf)) {
+    throw new RangeError(`unknown UF: ${String(options.uf)}`);
+  }
+  if (options.city === undefined) {
+    return undefined;
+  }
+  const city = canonicalCapital(options.city);
+  if (city === undefined) {
+    throw new RangeError(`unknown capital city: ${options.city}`);
+  }
+  return city;
+}
+
+/** Rule set selected by the scope options, before the type filter is applied. */
+export function rulesForOptions(options: HolidayOptions = {}): HolidayRule[] {
+  const city = canonicalCity(options);
+  const rules: HolidayRule[] = [...nationalRules];
+  if (options.uf !== undefined) {
+    rules.push(...stateRulesByUF[options.uf]);
+  }
+  if (city !== undefined) {
+    rules.push(...(municipalRulesByCapital[city] ?? []));
+  }
+  return rules;
+}
+
+function cacheKey(year: number, options: HolidayOptions, city: string | undefined): string {
+  const include = options.include === undefined ? '' : [...options.include].sort().join(',');
+  return `${year}|${options.uf ?? ''}|${city ?? ''}|${include}`;
+}
+
+function allHolidaysInYear(
+  year: number,
+  options: HolidayOptions,
+  city: string | undefined,
+): Holiday[] {
+  const key = cacheKey(year, options, city);
+  const cached = yearCache.get(key);
   if (cached !== undefined) {
     return cached;
   }
-  const evaluated = evaluateRules(nationalRules, year);
-  yearCache.set(year, evaluated);
+  const evaluated = evaluateRules(rulesForOptions(options), year);
+  yearCache.set(key, evaluated);
   return evaluated;
-}
-
-function includedTypes(options: HolidayOptions): ReadonlySet<HolidayType> {
-  return new Set<HolidayType>(options.include ?? DEFAULT_INCLUDE);
 }
 
 /** All holidays of `year`, sorted by date. */
@@ -60,11 +111,12 @@ export function holidays(year: number, options: HolidayOptions = {}): Holiday[] 
   if (!isValidYear(year)) {
     throw new RangeError(`year must be an integer between 1900 and 2199, got ${String(year)}`);
   }
+  const city = canonicalCity(options);
   const types = includedTypes(options);
   if (types.size === 0) {
     return [];
   }
-  return allHolidaysInYear(year).filter((holiday) => types.has(holiday.type));
+  return allHolidaysInYear(year, options, city).filter((holiday) => types.has(holiday.type));
 }
 
 /** All holidays falling exactly on `date`. */

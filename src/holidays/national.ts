@@ -8,9 +8,18 @@
  * Lei 6.802/1980 added 12/10. Lei 14.759/2023 added 20/11 from 2024.
  * Carnaval, Ash Wednesday and Corpus Christi are NOT national holidays: they
  * are "ponto facultativo" dates set by annual federal decree.
+ *
+ * Official texts checked:
+ * - Lei 662/1949: http://www.planalto.gov.br/ccivil_03/leis/l0662.htm
+ * - Lei 1.266/1950 and Lei 10.607/2002: https://www.planalto.gov.br/ccivil_03/leis/2002/l10607.htm
+ * - Lei 6.802/1980: http://www.planalto.gov.br/ccivil_03/leis/l6802.htm
+ * - Lei 14.759/2023: https://planalto.gov.br/ccivil_03/_ato2023-2026/2023/lei/l14759.htm
  */
 import { MIN_YEAR } from '../plain-date.js';
 import type { HolidayRule } from './types.js';
+
+const SOURCE_LEI_662 = 'http://www.planalto.gov.br/ccivil_03/leis/l0662.htm';
+const SOURCE_LEI_10607 = 'https://www.planalto.gov.br/ccivil_03/leis/2002/l10607.htm';
 
 const LEI_662 =
   'Lei nº 662, de 6 de abril de 1949, art. 1º (redação dada pela Lei nº 10.607, de 19 de dezembro de 2002)';
@@ -25,6 +34,7 @@ export const nationalRules: readonly HolidayRule[] = [
     nameEn: 'Universal Fraternity Day (New Year)',
     type: 'national',
     law: LEI_662,
+    source: SOURCE_LEI_662,
     since: 1950,
     month: 1,
     day: 1,
@@ -38,6 +48,7 @@ export const nationalRules: readonly HolidayRule[] = [
     // Lei 1.266/1950, art. 3º declared 21/04 a national holiday; Lei 10.607/2002
     // revoked that law and reinserted the date into Lei 662/1949, art. 1º.
     law: 'Lei nº 1.266, de 8 de dezembro de 1950, art. 3º; Lei nº 10.607/2002, art. 1º',
+    source: SOURCE_LEI_10607,
     since: 1951,
     month: 4,
     day: 21,
@@ -49,6 +60,7 @@ export const nationalRules: readonly HolidayRule[] = [
     nameEn: 'Labour Day',
     type: 'national',
     law: LEI_662,
+    source: SOURCE_LEI_662,
     since: 1949,
     month: 5,
     day: 1,
@@ -60,6 +72,7 @@ export const nationalRules: readonly HolidayRule[] = [
     nameEn: 'Independence Day',
     type: 'national',
     law: LEI_662,
+    source: SOURCE_LEI_662,
     since: 1949,
     month: 9,
     day: 7,
@@ -71,6 +84,7 @@ export const nationalRules: readonly HolidayRule[] = [
     nameEn: 'Our Lady of Aparecida Day',
     type: 'national',
     law: 'Lei nº 6.802, de 30 de junho de 1980',
+    source: 'http://www.planalto.gov.br/ccivil_03/leis/l6802.htm',
     since: 1980,
     month: 10,
     day: 12,
@@ -82,6 +96,7 @@ export const nationalRules: readonly HolidayRule[] = [
     nameEn: 'All Souls Day',
     type: 'national',
     law: 'Lei nº 10.607, de 19 de dezembro de 2002, art. 1º',
+    source: SOURCE_LEI_10607,
     since: 2003,
     month: 11,
     day: 2,
@@ -94,6 +109,7 @@ export const nationalRules: readonly HolidayRule[] = [
     type: 'national',
     // Before 2024 this was a commemorative date only, never a national holiday.
     law: 'Lei nº 14.759, de 21 de dezembro de 2023',
+    source: 'https://planalto.gov.br/ccivil_03/_ato2023-2026/2023/lei/l14759.htm',
     since: 2024,
     month: 11,
     day: 20,
@@ -106,6 +122,7 @@ export const nationalRules: readonly HolidayRule[] = [
     nameEn: 'Proclamation of the Republic',
     type: 'national',
     law: LEI_662,
+    source: SOURCE_LEI_662,
     since: 1949,
     month: 11,
     day: 15,
@@ -117,6 +134,7 @@ export const nationalRules: readonly HolidayRule[] = [
     nameEn: 'Christmas Day',
     type: 'national',
     law: LEI_662,
+    source: SOURCE_LEI_662,
     since: 1949,
     month: 12,
     day: 25,
@@ -128,6 +146,7 @@ export const nationalRules: readonly HolidayRule[] = [
     nameEn: 'Carnaval Monday',
     type: 'optional',
     law: PONTO_FACULTATIVO,
+    source: SOURCE_LEI_662,
     since: MIN_YEAR,
     offset: -48,
   },
@@ -138,6 +157,7 @@ export const nationalRules: readonly HolidayRule[] = [
     nameEn: 'Carnaval Tuesday',
     type: 'optional',
     law: PONTO_FACULTATIVO,
+    source: SOURCE_LEI_662,
     since: MIN_YEAR,
     offset: -47,
   },
@@ -148,6 +168,7 @@ export const nationalRules: readonly HolidayRule[] = [
     nameEn: 'Ash Wednesday',
     type: 'optional',
     law: PONTO_FACULTATIVO,
+    source: SOURCE_LEI_662,
     since: MIN_YEAR,
     offset: -46,
     note: 'Ponto facultativo até as 14h no serviço público federal.',
@@ -159,6 +180,7 @@ export const nationalRules: readonly HolidayRule[] = [
     nameEn: 'Corpus Christi',
     type: 'optional',
     law: PONTO_FACULTATIVO,
+    source: SOURCE_LEI_662,
     since: MIN_YEAR,
     offset: 60,
   },

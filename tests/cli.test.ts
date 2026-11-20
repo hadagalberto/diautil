@@ -1,5 +1,4 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -32,13 +31,11 @@ function runCli(args: readonly string[]): CliResult {
 }
 
 beforeAll(() => {
-  if (!existsSync(cliPath)) {
-    execFileSync('npm', ['run', 'build'], {
-      cwd: repoRoot,
-      encoding: 'utf8',
-      shell: process.platform === 'win32',
-    });
-  }
+  const npmCli = join(dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
+  execFileSync(process.execPath, [npmCli, 'run', 'build'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
 });
 
 describe('CLI (built binary)', () => {
@@ -69,6 +66,42 @@ describe('CLI (built binary)', () => {
     const zumbi = parsed.find((entry) => entry.data === '2024-11-20');
     expect(zumbi?.lei).toBe('Lei nº 14.759, de 21 de dezembro de 2023');
     expect(parsed[0]?.data).toBe('2024-01-01');
+  });
+
+  it('accepts --uf and --cidade scope flags', () => {
+    interface ScopedEntry {
+      readonly data: string;
+      readonly nome: string;
+      readonly tipo: string;
+      readonly uf?: string;
+      readonly cidade?: string;
+      readonly fonte?: string;
+    }
+    const state = runCli(['feriados', '2026', '--uf', 'RJ', '--json']);
+    expect(state.status).toBe(0);
+    const stateEntries = JSON.parse(state.stdout) as ScopedEntry[];
+    const saoJorge = stateEntries.find((entry) => entry.data === '2026-04-23');
+    expect(saoJorge?.nome).toBe('Dia de São Jorge');
+    expect(saoJorge?.tipo).toBe('state');
+    expect(saoJorge?.uf).toBe('RJ');
+    expect(saoJorge?.fonte).toMatch(/^https?:\/\//);
+
+    const city = runCli(['feriados', '2026', '--cidade', 'sao paulo', '--json']);
+    expect(city.status).toBe(0);
+    const cityEntries = JSON.parse(city.stdout) as ScopedEntry[];
+    const aniversario = cityEntries.find((entry) => entry.data === '2026-01-25');
+    expect(aniversario?.nome).toBe('Aniversário da Cidade de São Paulo');
+    expect(aniversario?.tipo).toBe('municipal');
+    expect(aniversario?.cidade).toBe('São Paulo');
+
+    const text = runCli(['feriados', '2026', '--uf', 'SP']);
+    expect(text.stdout).toContain('Feriados de 2026 — SP:');
+    expect(text.stdout).toContain('2026-07-09  Revolução Constitucionalista de 1932');
+  });
+
+  it('rejects unknown UF and city scopes', () => {
+    expect(runCli(['feriados', '2026', '--uf', 'XX']).stderr).toContain('unknown UF');
+    expect(runCli(['feriados', '2026', '--cidade', 'Nowhere']).stderr).toContain('unknown capital');
   });
 
   it('fails clearly on unknown commands and invalid years', () => {

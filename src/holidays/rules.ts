@@ -69,6 +69,9 @@ export function evaluateRule(rule: HolidayRule, year: number): Holiday | undefin
     nameEn: rule.nameEn,
     type: rule.type,
     law: rule.law,
+    ...(rule.source === undefined ? {} : { source: rule.source }),
+    ...(rule.uf === undefined ? {} : { uf: rule.uf }),
+    ...(rule.city === undefined ? {} : { city: rule.city }),
     ...(rule.note === undefined ? {} : { note: rule.note }),
   };
 }

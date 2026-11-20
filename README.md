@@ -3,9 +3,9 @@
 Brazilian holidays and business-day calendar for TypeScript/JavaScript. Every rule cites its
 legal source. Zero runtime dependencies, ESM + CJS, strict TypeScript.
 
-> Milestone 1 scope: date model, Easter and movable dates, declarative rule engine, national
-> holidays, and the `feriados` CLI command. State/city calendars and business-day arithmetic are
-> planned for later milestones and are not part of the current API yet.
+> Scope so far: date model, Easter and movable dates, declarative rule engine, national/state and
+> 27-capital municipal holidays, and the `feriados` CLI command. Business-day arithmetic is
+> planned for a later milestone and is not part of the current API yet.
 
 ## Date model
 
@@ -54,6 +54,28 @@ holidays(2026, { include: ['optional'] }).map(toISO);
 
 Easter uses the Meeus/Jones/Butcher (Anonymous Gregorian) algorithm. Derived dates: Carnaval
 Monday/Tuesday (Easter −48/−47), Ash Wednesday (−46), Good Friday (−2), Corpus Christi (+60).
+
+### State and capital-city calendars
+
+The calendar is the union of the selected scopes. Pass `uf` to add a state's holidays and `city`
+to add a capital's municipal holidays; `include` filters by type. With no scope, the calendar stays
+national-only. Capital names are matched case- and accent-insensitively.
+
+```ts
+import { holidays, isHoliday, holidayName, nextHoliday } from 'diautil';
+
+holidays(2026, { uf: 'SP' }); // national + São Paulo state holidays
+holidays(2026, { city: 'São Paulo' }); // national + São Paulo city holidays
+holidays(2026, { uf: 'RJ', city: 'Rio de Janeiro' }); // all three scopes
+isHoliday('2026-04-23', { uf: 'RJ' }); // São Jorge — true
+holidayName('2026-04-23', { uf: 'RJ' }, 'en'); // 'Saint George Day'
+nextHoliday('2026-01-25', { city: 'São Paulo' })?.date;
+```
+
+Only holidays verified against an official source (state legislature/government or prefeitura)
+are included, each carrying its law number and source URL in the rule metadata and in code
+comments. Anything that could not be verified is recorded in [`docs/unverified.md`](docs/unverified.md)
+instead of being guessed.
 
 ### Legal sources
 

@@ -1,6 +1,7 @@
 import type { PlainDate, Weekday } from '../plain-date.js';
+import type { UF } from './geo.js';
 
-/** Scope of a holiday rule. Only `national` data ships in milestone 1. */
+/** Scope of a holiday rule. */
 export type HolidayType = 'national' | 'state' | 'municipal' | 'optional';
 
 /** Output language for holiday names. */
@@ -14,6 +15,12 @@ export interface Holiday {
   readonly type: HolidayType;
   /** Legal source: law/decree number and article, never invented. */
   readonly law: string;
+  /** Official URL where the norm can be checked. */
+  readonly source?: string;
+  /** Federative unit, present on state and municipal holidays. */
+  readonly uf?: UF;
+  /** Canonical capital name, present on municipal holidays. */
+  readonly city?: string;
   readonly note?: string;
 }
 
@@ -23,6 +30,10 @@ interface RuleMeta {
   readonly nameEn: string;
   readonly type: HolidayType;
   readonly law: string;
+  /** Official URL where the norm can be checked. */
+  readonly source?: string;
+  readonly uf?: UF;
+  readonly city?: string;
   /** First year in which the rule applies (inclusive). */
   readonly since?: number;
   /** Last year in which the rule applies (inclusive). */
