@@ -7,3 +7,4 @@ export * from './holidays/index.js';
 export { nationalRules } from './holidays/national.js';
 export { stateRulesByUF } from './holidays/state.js';
 export { municipalRulesByCapital } from './holidays/municipal.js';
+export * from './business/index.js';

@@ -1,8 +1,23 @@
 /**
- * CLI for listing holidays. Supports national, state and capital-city scopes
- * through `--uf` and `--cidade`. Other commands are added in later milestones.
+ * CLI for holidays and business-day arithmetic.
+ * All commands accept `--json` for machine-readable output.
  */
-import { holidays, toISO, type HolidayOptions, type UF } from './index.js';
+import {
+  addBusinessDays,
+  businessDaysBetween,
+  fromISO,
+  holidays,
+  isBusinessDay,
+  isUF,
+  nthBusinessDayOfMonth,
+  toISO,
+  toPlainDate,
+  type CalendarKind,
+  type CalendarOptions,
+  type DateInput,
+  type HolidayOptions,
+  type UF,
+} from './index.js';
 
 const VERSION = '0.1.0';
 
@@ -10,42 +25,273 @@ const HELP = `diautil ${VERSION} — feriados e calendário brasileiro
 
 Uso:
   diautil feriados <ano> [--uf UF] [--cidade NOME] [--json]
+  diautil util <data> [--uf UF] [--cidade NOME] [--calendario civil|bancario] [--json]
+  diautil soma <data> <n> [--calendario civil|bancario] [--json]
+  diautil entre <inicio> <fim> [--uf UF] [--cidade NOME] [--inclusive] [--json]
+  diautil quinto-dia-util <YYYY-MM> [--uf UF] [--cidade NOME] [--json]
   diautil --version
 
 Opções:
-  --uf UF        sigla da unidade federativa (ex.: SP, RJ, MG)
-  --cidade NOME  capital cujos feriados municipais entram no calendário
-  --json         saída legível por máquina
-  -h, --help     mostra esta ajuda
+  --uf UF          sigla da unidade federativa (ex.: SP, RJ, MG)
+  --cidade NOME    capital cujos feriados municipais entram no calendário
+  --calendario T   calendário: civil (padrão) ou bancario
+  --inclusive      conta as duas datas em "entre"
+  --json           saída legível por máquina
+  -h, --help       mostra esta ajuda
 `;
+
+const VALUE_FLAGS: ReadonlySet<string> = new Set(['--uf', '--cidade', '--calendario']);
+
+interface ParsedArgs {
+  readonly positionals: readonly string[];
+  readonly flags: ReadonlyMap<string, string | true>;
+}
+
+interface CalendarFlags {
+  readonly options: CalendarOptions;
+  readonly calendar: CalendarKind;
+}
 
 function fail(message: string): void {
   process.stderr.write(`diautil: ${message}\n${HELP}`);
   process.exitCode = 1;
 }
 
-function optionValue(args: readonly string[], flag: string): string | undefined {
-  const index = args.indexOf(flag);
-  if (index === -1) {
-    return undefined;
+function parseArgs(args: readonly string[]): ParsedArgs {
+  const positionals: string[] = [];
+  const flags = new Map<string, string | true>();
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index] ?? '';
+    if (VALUE_FLAGS.has(arg)) {
+      const value = args[index + 1];
+      if (value === undefined || value.startsWith('--')) {
+        throw new Error(`opção ${arg} requer um valor`);
+      }
+      flags.set(arg, value);
+      index += 1;
+    } else if (arg.startsWith('-')) {
+      flags.set(arg, true);
+    } else {
+      positionals.push(arg);
+    }
   }
-  return args[index + 1];
+  return { positionals, flags };
 }
 
-function readOptions(args: readonly string[]): HolidayOptions | undefined {
-  const uf = optionValue(args, '--uf');
-  const city = optionValue(args, '--cidade');
-  const options: { uf?: UF; city?: string } = {};
-  if (uf !== undefined) {
-    options.uf = uf.toUpperCase() as UF;
-  }
-  if (city !== undefined) {
-    options.city = city;
-  }
-  if (uf === undefined && city === undefined) {
+function readUf(flags: ReadonlyMap<string, string | true>): UF | undefined {
+  const raw = flags.get('--uf');
+  if (raw === undefined || typeof raw !== 'string') {
     return undefined;
   }
-  return options;
+  const uf = raw.toUpperCase();
+  if (!isUF(uf)) {
+    throw new RangeError(`unknown UF: ${raw}`);
+  }
+  return uf;
+}
+
+function readCalendarKind(flags: ReadonlyMap<string, string | true>): CalendarKind {
+  const raw = flags.get('--calendario');
+  if (raw === undefined) {
+    return 'civil';
+  }
+  if (raw === 'civil' || raw === 'bancario') {
+    return raw;
+  }
+  throw new RangeError(`calendário desconhecido: ${String(raw)}`);
+}
+
+function readFlags(flags: ReadonlyMap<string, string | true>): CalendarFlags {
+  const uf = readUf(flags);
+  const city = flags.get('--cidade');
+  return {
+    calendar: readCalendarKind(flags),
+    options: {
+      ...(uf === undefined ? {} : { uf }),
+      ...(city === undefined || typeof city !== 'string' ? {} : { city }),
+    },
+  };
+}
+
+function readDate(value: string | undefined, label: string): DateInput {
+  if (value === undefined) {
+    throw new RangeError(`informe ${label} no formato AAAA-MM-DD`);
+  }
+  return fromISO(value);
+}
+
+function printJson(value: unknown): void {
+  process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
+}
+
+function runFeriados(
+  positionals: readonly string[],
+  flags: ReadonlyMap<string, string | true>,
+): void {
+  const yearArg = positionals[0];
+  if (yearArg === undefined) {
+    fail('informe o ano: diautil feriados 2026');
+    return;
+  }
+  const year = Number(yearArg);
+  if (!Number.isInteger(year) || year < 1900 || year > 2199) {
+    fail(`ano inválido: ${yearArg}`);
+    return;
+  }
+  let options: HolidayOptions | undefined;
+  try {
+    const parsed = readFlags(flags);
+    if (parsed.calendar !== 'civil') {
+      throw new RangeError('--calendario não se aplica a feriados');
+    }
+    options = Object.keys(parsed.options).length === 0 ? undefined : parsed.options;
+  } catch (error: unknown) {
+    fail(error instanceof Error ? error.message : String(error));
+    return;
+  }
+  const found = holidays(year, options);
+  if (flags.has('--json')) {
+    printJson(
+      found.map((holiday) => ({
+        data: toISO(holiday.date),
+        nome: holiday.namePt,
+        tipo: holiday.type,
+        uf: holiday.uf,
+        cidade: holiday.city,
+        lei: holiday.law,
+        fonte: holiday.source,
+      })),
+    );
+    return;
+  }
+  const scope = [options?.uf, options?.city].filter(Boolean).join(' / ');
+  const header =
+    scope === '' ? `Feriados nacionais de ${year}:` : `Feriados de ${year} — ${scope}:`;
+  process.stdout.write(`${header}\n`);
+  for (const holiday of found) {
+    process.stdout.write(`${toISO(holiday.date)}  ${holiday.namePt}\n`);
+  }
+}
+
+function runUtil(positionals: readonly string[], flags: ReadonlyMap<string, string | true>): void {
+  let date: DateInput;
+  let parsed: CalendarFlags;
+  try {
+    date = readDate(positionals[0], 'a data');
+    parsed = readFlags(flags);
+  } catch (error: unknown) {
+    fail(error instanceof Error ? error.message : String(error));
+    return;
+  }
+  const result = isBusinessDay(date, { ...parsed.options, calendar: parsed.calendar });
+  if (flags.has('--json')) {
+    printJson({ data: toISO(toPlainDate(date)), util: result, calendario: parsed.calendar });
+    return;
+  }
+  process.stdout.write(
+    `${toISO(toPlainDate(date))} ${result ? 'é dia útil' : 'não é dia útil'}.\n`,
+  );
+}
+
+function runSoma(positionals: readonly string[], flags: ReadonlyMap<string, string | true>): void {
+  let date: DateInput;
+  let days: number;
+  let parsed: CalendarFlags;
+  try {
+    date = readDate(positionals[0], 'a data');
+    const raw = positionals[1];
+    days = Number(raw);
+    if (raw === undefined || !Number.isInteger(days)) {
+      throw new RangeError(`número de dias inválido: ${String(raw)}`);
+    }
+    parsed = readFlags(flags);
+  } catch (error: unknown) {
+    fail(error instanceof Error ? error.message : String(error));
+    return;
+  }
+  const result = addBusinessDays(date, days, { ...parsed.options, calendar: parsed.calendar });
+  if (flags.has('--json')) {
+    printJson({
+      data: toISO(toPlainDate(date)),
+      dias: days,
+      resultado: toISO(result),
+      calendario: parsed.calendar,
+    });
+    return;
+  }
+  process.stdout.write(
+    `${toISO(toPlainDate(date))} + ${String(days)} dias úteis = ${toISO(result)}\n`,
+  );
+}
+
+function runEntre(positionals: readonly string[], flags: ReadonlyMap<string, string | true>): void {
+  let start: DateInput;
+  let end: DateInput;
+  let parsed: CalendarFlags;
+  try {
+    start = readDate(positionals[0], 'a data inicial');
+    end = readDate(positionals[1], 'a data final');
+    parsed = readFlags(flags);
+  } catch (error: unknown) {
+    fail(error instanceof Error ? error.message : String(error));
+    return;
+  }
+  const inclusive = flags.has('--inclusive');
+  const count = businessDaysBetween(start, end, {
+    ...parsed.options,
+    calendar: parsed.calendar,
+    inclusive,
+  });
+  if (flags.has('--json')) {
+    printJson({
+      inicio: toISO(toPlainDate(start)),
+      fim: toISO(toPlainDate(end)),
+      diasUteis: count,
+      inclusive,
+      calendario: parsed.calendar,
+    });
+    return;
+  }
+  process.stdout.write(
+    `Entre ${toISO(toPlainDate(start))} e ${toISO(toPlainDate(end))} há ${String(count)} dias úteis${inclusive ? ' (incluindo as datas)' : ''}.\n`,
+  );
+}
+
+function runQuintoDiaUtil(
+  positionals: readonly string[],
+  flags: ReadonlyMap<string, string | true>,
+): void {
+  let year: number;
+  let month: number;
+  let parsed: CalendarFlags;
+  try {
+    const raw = positionals[0];
+    const match = /^(\d{4})-(\d{2})$/.exec(raw ?? '');
+    if (match?.[1] === undefined || match[2] === undefined) {
+      throw new RangeError(`mês inválido: ${String(raw)} (use AAAA-MM)`);
+    }
+    year = Number(match[1]);
+    month = Number(match[2]);
+    parsed = readFlags(flags);
+  } catch (error: unknown) {
+    fail(error instanceof Error ? error.message : String(error));
+    return;
+  }
+  const result = nthBusinessDayOfMonth(year, month, 5, {
+    ...parsed.options,
+    calendar: parsed.calendar,
+  });
+  if (flags.has('--json')) {
+    printJson({
+      mes: `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`,
+      diaUtil: 5,
+      data: toISO(result),
+      calendario: parsed.calendar,
+    });
+    return;
+  }
+  const label = `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`;
+  process.stdout.write(`5º dia útil de ${label}: ${toISO(result)}\n`);
 }
 
 function run(args: readonly string[]): void {
@@ -58,65 +304,35 @@ function run(args: readonly string[]): void {
     process.stdout.write(`${VERSION}\n`);
     return;
   }
-  if (command !== 'feriados') {
-    fail(`comando desconhecido: ${command}`);
+  let parsed: ParsedArgs;
+  try {
+    parsed = parseArgs(args.slice(1));
+  } catch (error: unknown) {
+    fail(error instanceof Error ? error.message : String(error));
     return;
   }
-  const positional = args.slice(1).filter((arg, index, all) => {
-    if (arg.startsWith('--')) {
-      return false;
+  try {
+    switch (command) {
+      case 'feriados':
+        runFeriados(parsed.positionals, parsed.flags);
+        return;
+      case 'util':
+        runUtil(parsed.positionals, parsed.flags);
+        return;
+      case 'soma':
+        runSoma(parsed.positionals, parsed.flags);
+        return;
+      case 'entre':
+        runEntre(parsed.positionals, parsed.flags);
+        return;
+      case 'quinto-dia-util':
+        runQuintoDiaUtil(parsed.positionals, parsed.flags);
+        return;
+      default:
+        fail(`comando desconhecido: ${command}`);
     }
-    const previous = all[index - 1];
-    return previous !== '--uf' && previous !== '--cidade';
-  });
-  const yearArg = positional[0];
-  if (yearArg === undefined) {
-    fail('informe o ano: diautil feriados 2026');
-    return;
-  }
-  const year = Number(yearArg);
-  if (!Number.isInteger(year) || year < 1900 || year > 2199) {
-    fail(`ano inválido: ${yearArg}`);
-    return;
-  }
-  let options: HolidayOptions | undefined;
-  try {
-    options = readOptions(args);
   } catch (error: unknown) {
     fail(error instanceof Error ? error.message : String(error));
-    return;
-  }
-  let found;
-  try {
-    found = holidays(year, options);
-  } catch (error: unknown) {
-    fail(error instanceof Error ? error.message : String(error));
-    return;
-  }
-  if (args.includes('--json')) {
-    process.stdout.write(
-      `${JSON.stringify(
-        found.map((holiday) => ({
-          data: toISO(holiday.date),
-          nome: holiday.namePt,
-          tipo: holiday.type,
-          uf: holiday.uf,
-          cidade: holiday.city,
-          lei: holiday.law,
-          fonte: holiday.source,
-        })),
-        null,
-        2,
-      )}\n`,
-    );
-    return;
-  }
-  const scope = [options?.uf, options?.city].filter(Boolean).join(' / ');
-  const header =
-    scope === '' ? `Feriados nacionais de ${year}:` : `Feriados de ${year} — ${scope}:`;
-  process.stdout.write(`${header}\n`);
-  for (const holiday of found) {
-    process.stdout.write(`${toISO(holiday.date)}  ${holiday.namePt}\n`);
   }
 }
 

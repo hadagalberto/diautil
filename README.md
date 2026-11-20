@@ -3,9 +3,9 @@
 Brazilian holidays and business-day calendar for TypeScript/JavaScript. Every rule cites its
 legal source. Zero runtime dependencies, ESM + CJS, strict TypeScript.
 
-> Scope so far: date model, Easter and movable dates, declarative rule engine, national/state and
-> 27-capital municipal holidays, and the `feriados` CLI command. Business-day arithmetic is
-> planned for a later milestone and is not part of the current API yet.
+> Includes the date model, Easter and movable dates, the declarative rule engine, national/state
+> and 27-capital municipal holidays, business-day arithmetic, civil and banking calendars,
+> settlement helpers and the CLI.
 
 ## Date model
 
@@ -116,13 +116,87 @@ const rule = {
 const holiday = evaluateRule(rule, 2024);
 ```
 
+## Business days
+
+A business day is a date that is neither a configured weekend day (Saturday/Sunday by default)
+nor a holiday in the selected calendar.
+
+```ts
+import {
+  addBusinessDays,
+  businessDaysBetween,
+  isBusinessDay,
+  lastBusinessDayOfMonth,
+  nextBusinessDay,
+  nthBusinessDayOfMonth,
+  previousBusinessDay,
+  toISO,
+} from 'diautil';
+
+isBusinessDay('2026-11-20'); // false — Zumbi, national holiday since 2024
+isBusinessDay('2026-11-23'); // true — Monday
+addBusinessDays('2026-11-19', 1); // 2026-11-23 (skips the holiday and the weekend)
+addBusinessDays('2026-11-21', 0); // 2026-11-23 (rolls forward)
+addBusinessDays('2026-11-21', 0, { roll: 'backward' }); // 2026-11-19
+businessDaysBetween('2026-11-19', '2026-11-25'); // 2 — open interval (a, b)
+businessDaysBetween('2026-11-19', '2026-11-25', { inclusive: true }); // 4
+nextBusinessDay('2026-11-19'); // 2026-11-23
+previousBusinessDay('2026-11-23'); // 2026-11-19
+lastBusinessDayOfMonth(2026, 12); // 2026-12-31
+nthBusinessDayOfMonth(2026, 12, 5); // 2026-12-07 — 5º dia útil (CLT art. 459)
+nthBusinessDayOfMonth(2026, 12, -1); // 2026-12-31
+```
+
+`addBusinessDays` accepts negative offsets, and `businessDaysBetween` is signed: swapping the
+endpoints negates the result. Months and years are cached per calendar, so counting across a
+century is a cache lookup plus a binary search, not a day-by-day walk.
+
+### Custom calendars
+
+`createCalendar` returns an immutable, cached calendar. Standalone functions accept the same
+options as their second/third argument.
+
+```ts
+import { createCalendar, isBusinessDay } from 'diautil';
+
+const calendar = createCalendar({
+  uf: 'RJ',
+  city: 'Rio de Janeiro',
+  weekends: [0, 6],
+  extraHolidays: [{ date: '2026-11-18', namePt: 'Feriado interno', law: 'Política interna' }],
+  removeHolidays: ['2026-11-20'],
+});
+calendar.isBusinessDay('2026-11-18'); // false — extra holiday
+calendar.isBusinessDay('2026-11-20'); // true — national holiday removed
+```
+
+### Banking calendar and settlement
+
+```ts
+import { boletoDueDateAdjust, settlementD1, settlementD2, isBusinessDay } from 'diautil';
+
+isBusinessDay('2026-02-16', { calendar: 'bancario' }); // false — Carnaval Monday
+boletoDueDateAdjust('2026-12-25'); // 2026-12-28 (Lei 7.089/1983, art. 1º)
+settlementD1('2026-11-19'); // 2026-11-23 — D+1 interbank business day
+settlementD2('2026-11-19'); // 2026-11-24
+```
+
+The banking calendar adds Carnaval Monday/Tuesday to the national holidays as non-business days
+for interbank settlement. Sources, deliberate scope and examples are in
+[`docs/banking-calendar.md`](docs/banking-calendar.md).
+
 ## CLI
 
 ```sh
-diautil feriados 2026
-diautil feriados 2026 --json
+diautil feriados 2026 --uf SP --cidade "São Paulo" --json
+diautil util 2026-11-20 --uf RJ
+diautil soma 2026-11-19 10 --calendario bancario
+diautil entre 2026-01-01 2026-12-31 --uf MG
+diautil quinto-dia-util 2026-12
 diautil --version
 ```
+
+All commands support `--json` for machine-readable output; `entre` also accepts `--inclusive`.
 
 ## Development
 

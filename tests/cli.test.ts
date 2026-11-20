@@ -41,7 +41,12 @@ beforeAll(() => {
 describe('CLI (built binary)', () => {
   it('prints its version and help', () => {
     expect(runCli(['--version']).stdout.trim()).toBe('0.1.0');
-    expect(runCli(['--help']).stdout).toContain('diautil feriados <ano>');
+    const help = runCli(['--help']).stdout;
+    expect(help).toContain('diautil feriados <ano>');
+    expect(help).toContain('diautil util <data>');
+    expect(help).toContain('diautil soma <data> <n>');
+    expect(help).toContain('diautil entre <inicio> <fim>');
+    expect(help).toContain('diautil quinto-dia-util <YYYY-MM>');
   });
 
   it('lists national holidays as pt-BR text', () => {
@@ -114,5 +119,108 @@ describe('CLI (built binary)', () => {
     const missingYear = runCli(['feriados']);
     expect(missingYear.status).toBe(1);
     expect(missingYear.stderr).toContain('informe o ano');
+  });
+
+  it('reports whether a date is a business day', () => {
+    expect(runCli(['util', '2026-11-19']).stdout).toContain('2026-11-19 é dia útil.');
+    expect(runCli(['util', '2026-11-20']).stdout).toContain('2026-11-20 não é dia útil.');
+    const json = runCli(['util', '2026-11-20', '--json']);
+    expect(json.status).toBe(0);
+    interface UtilResult {
+      readonly data: string;
+      readonly util: boolean;
+      readonly calendario: string;
+    }
+    expect(JSON.parse(json.stdout) as UtilResult).toEqual({
+      data: '2026-11-20',
+      util: false,
+      calendario: 'civil',
+    });
+  });
+
+  it('switches calendar with --calendario', () => {
+    expect(runCli(['util', '2026-02-16', '--calendario', 'bancario']).stdout).toContain(
+      'não é dia útil',
+    );
+    expect(runCli(['soma', '2026-02-13', '3']).stdout).toContain('= 2026-02-18');
+    expect(runCli(['soma', '2026-02-13', '3', '--calendario', 'bancario']).stdout).toContain(
+      '= 2026-02-20',
+    );
+  });
+
+  it('adds business days with JSON output', () => {
+    const result = runCli(['soma', '2026-11-19', '10', '--json']);
+    expect(result.status).toBe(0);
+    interface SomaResult {
+      readonly data: string;
+      readonly dias: number;
+      readonly resultado: string;
+      readonly calendario: string;
+    }
+    expect(JSON.parse(result.stdout) as SomaResult).toEqual({
+      data: '2026-11-19',
+      dias: 10,
+      resultado: '2026-12-04',
+      calendario: 'civil',
+    });
+  });
+
+  it('counts business days between dates, with scope and inclusivity', () => {
+    const result = runCli(['entre', '2026-01-01', '2026-12-31', '--uf', 'MG']);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('há 252 dias úteis.');
+    interface EntreResult {
+      readonly inicio: string;
+      readonly fim: string;
+      readonly diasUteis: number;
+      readonly inclusive: boolean;
+      readonly calendario: string;
+    }
+    const json = runCli([
+      'entre',
+      '2026-02-16',
+      '2026-02-17',
+      '--calendario',
+      'bancario',
+      '--inclusive',
+      '--json',
+    ]);
+    expect(JSON.parse(json.stdout) as EntreResult).toEqual({
+      inicio: '2026-02-16',
+      fim: '2026-02-17',
+      diasUteis: 0,
+      inclusive: true,
+      calendario: 'bancario',
+    });
+  });
+
+  it('computes the fifth business day of a month', () => {
+    expect(runCli(['quinto-dia-util', '2026-12']).stdout.trim()).toBe(
+      '5º dia útil de 2026-12: 2026-12-07',
+    );
+    const json = runCli(['quinto-dia-util', '2026-12', '--json']);
+    interface QuintoResult {
+      readonly mes: string;
+      readonly diaUtil: number;
+      readonly data: string;
+      readonly calendario: string;
+    }
+    expect(JSON.parse(json.stdout) as QuintoResult).toEqual({
+      mes: '2026-12',
+      diaUtil: 5,
+      data: '2026-12-07',
+      calendario: 'civil',
+    });
+  });
+
+  it('fails clearly on invalid business-day arguments', () => {
+    expect(runCli(['util', '2026-13-01']).stderr).toContain('invalid date');
+    expect(runCli(['util', '2026-11-19', '--calendario', 'x']).stderr).toContain(
+      'calendário desconhecido',
+    );
+    expect(runCli(['util', '2026-11-19', '--uf', 'XX']).stderr).toContain('unknown UF');
+    expect(runCli(['quinto-dia-util', '2026']).stderr).toContain('mês inválido');
+    expect(runCli(['soma', '2026-11-19']).stderr).toContain('número de dias inválido');
+    expect(runCli(['util', '2026-11-19', '--uf']).stderr).toContain('requer um valor');
   });
 });
