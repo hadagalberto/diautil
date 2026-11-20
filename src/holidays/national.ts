@@ -26,6 +26,33 @@ const LEI_662 =
 const PONTO_FACULTATIVO =
   'Ponto facultativo no serviço público federal, fixado anualmente por decreto da Presidência da República; não é feriado nacional (Lei nº 662/1949, art. 1º)';
 
+/** Law that allows municipalities to declare Good Friday as a religious holiday. */
+export const CUSTOMARY_GOOD_FRIDAY_LAW =
+  'Lei nº 9.093, de 12 de setembro de 1995, art. 2º (Sexta-feira da Paixão de Cristo: feriado religioso municipal)';
+
+/** Official Planalto text of Lei 9.093/1995. */
+export const CUSTOMARY_GOOD_FRIDAY_SOURCE = 'https://www.planalto.gov.br/ccivil_03/leis/l9093.htm';
+
+/**
+ * Optional, opt-in "common sense" national list. Good Friday is NOT a legal
+ * national holiday, so it is kept out of `nationalRules`; callers who want it
+ * in the national calendar pass `includeCustomaryNational: true`.
+ */
+export const customaryNationalRules: readonly HolidayRule[] = [
+  {
+    kind: 'easter',
+    id: 'good-friday-customary',
+    namePt: 'Sexta-feira da Paixão (costumeiro nacional)',
+    nameEn: 'Good Friday (customary national)',
+    type: 'national',
+    law: CUSTOMARY_GOOD_FRIDAY_LAW,
+    source: CUSTOMARY_GOOD_FRIDAY_SOURCE,
+    since: MIN_YEAR,
+    offset: -2,
+    note: 'Incluído apenas com includeCustomaryNational: true. Não é feriado nacional legal: Lei nº 9.093/1995, art. 2º permite aos municípios declará-lo como feriado religioso. É, porém, dia não útil no calendário bancário (B3/ANBIMA/BCB/FEBRABAN).',
+  },
+];
+
 export const nationalRules: readonly HolidayRule[] = [
   {
     kind: 'fixed',

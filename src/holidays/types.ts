@@ -7,6 +7,19 @@ export type HolidayType = 'national' | 'state' | 'municipal' | 'optional';
 /** Output language for holiday names. */
 export type Locale = 'pt-BR' | 'en';
 
+/** A lower-precedence rule that declared the same date as the kept holiday. */
+export interface AlsoDeclaredBy {
+  readonly id: string;
+  readonly namePt: string;
+  readonly nameEn: string;
+  readonly type: HolidayType;
+  /** Legal source of the merged rule, preserved verbatim. */
+  readonly law: string;
+  readonly source?: string;
+  readonly uf?: UF;
+  readonly city?: string;
+}
+
 export interface Holiday {
   readonly id: string;
   readonly date: PlainDate;
@@ -21,6 +34,11 @@ export interface Holiday {
   readonly uf?: UF;
   /** Canonical capital name, present on municipal holidays. */
   readonly city?: string;
+  /**
+   * Citations of same-date rules that were merged into this entry. Populated
+   * by date deduplication; precedence is national > state > municipal > optional.
+   */
+  readonly alsoDeclaredBy?: readonly AlsoDeclaredBy[];
   readonly note?: string;
 }
 

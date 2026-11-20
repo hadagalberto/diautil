@@ -223,4 +223,24 @@ describe('CLI (built binary)', () => {
     expect(runCli(['soma', '2026-11-19']).stderr).toContain('número de dias inválido');
     expect(runCli(['util', '2026-11-19', '--uf']).stderr).toContain('requer um valor');
   });
+
+  it('keeps Good Friday out of the legal list and inside the banking calendar', () => {
+    const legal = runCli(['feriados', '2026', '--json']);
+    interface Entry {
+      readonly data: string;
+    }
+    expect((JSON.parse(legal.stdout) as Entry[]).some((e) => e.data === '2026-04-03')).toBe(false);
+
+    const customary = runCli(['feriados', '2026', '--customarios', '--json']);
+    const customaryEntries = JSON.parse(customary.stdout) as Entry[];
+    expect(customaryEntries.some((e) => e.data === '2026-04-03')).toBe(true);
+
+    interface UtilResult {
+      readonly util: boolean;
+    }
+    const banking = runCli(['util', '2026-04-03', '--calendario', 'bancario', '--json']);
+    expect((JSON.parse(banking.stdout) as UtilResult).util).toBe(false);
+    const civil = runCli(['util', '2026-04-03', '--json']);
+    expect((JSON.parse(civil.stdout) as UtilResult).util).toBe(true);
+  });
 });

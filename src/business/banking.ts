@@ -1,10 +1,10 @@
 /**
- * Banking calendar (FEBRABAN / BCB practice for interbank settlement).
+ * Banking calendar (FEBRABAN / B3 / ANBIMA / BCB practice for interbank settlement).
  *
- * Scope, per SPEC: the national holiday set plus Carnaval Monday and Tuesday
- * as non-business days. This is deliberately narrower than the full public
- * FEBRABAN table (which also lists Good Friday and Corpus Christi); callers
- * that need those dates can add them with `createCalendar({ extraHolidays })`.
+ * A date is a non-business day when it is a national holiday, Carnaval Monday
+ * or Tuesday, or Good Friday. Good Friday is legally a municipal religious
+ * holiday (Lei 9.093/1995 art. 2º), but no banking business or interbank
+ * settlement takes place on that date anywhere in Brazil.
  *
  * Sources checked (no law number is invented here):
  * - Resolução CMN nº 4.880, de 23 de dezembro de 2020: federal holidays are not
@@ -13,12 +13,12 @@
  * - FEBRABAN, "Feriados Bancários": https://feriadosbancarios.febraban.org.br
  * - FEBRABAN, "Febraban informa sobre o expediente bancário durante o Carnaval":
  *   https://portal.febraban.org.br/noticia/4421/pt-br
- *   ("Os bancos não terão atendimento presencial ao público nas agências nos
- *   dias 16 de fevereiro (segunda-feira), e 17 de fevereiro (terça-feira)").
+ * - B3 / ANBIMA / BCB settlement calendar: Good Friday has no banking business.
  */
-import { compareDates, toISO } from '../plain-date.js';
+import { toISO } from '../plain-date.js';
 import { addDays } from '../plain-date.js';
 import { easterSunday } from '../easter.js';
+import { deduplicateHolidays, withAlsoDeclaredBy } from '../holidays/dedupe.js';
 import { holidays, type HolidayOptions } from '../holidays/index.js';
 import type { Holiday, HolidayType } from '../holidays/types.js';
 
@@ -28,16 +28,28 @@ export const BANKING_LAW = 'Resolução CMN nº 4.880, de 23 de dezembro de 2020
 /** Official FEBRABAN page listing bank holidays and the CMN resolution note. */
 export const BANKING_SOURCE = 'https://feriadosbancarios.febraban.org.br';
 
+/** Official B3 rule page: no contracting, clearing or settlement on Good Friday. */
+export const BANKING_GOOD_FRIDAY_SOURCE =
+  'https://www.b3.com.br/pt_br/solucoes/plataformas/puma-trading-system/para-participantes-e-traders/calendario-de-negociacao/feriados/';
+
+/** Official ANBIMA compilation of bank holidays, listing Paixão de Cristo. */
+export const ANBIMA_BANK_HOLIDAYS_SOURCE = 'https://www.anbima.com.br/feriados/feriados.asp';
+
+/** FEBRABAN 2026 bank-holiday notice citing CMN 4.880/2020 and 03/04. */
+export const FEBRABAN_2026_SOURCE = 'https://portal.febraban.org.br/noticia/4413/pt-br/';
+
 /** Human-readable explanation shipped with banking calendar metadata. */
 export const BANKING_NOTE =
-  'Dias sem expediente bancário para liquidação interbancária: feriados nacionais e Segunda/Terça de Carnaval (FEBRABAN/BCB).';
+  'Dias sem expediente bancário para liquidação interbancária: feriados nacionais, Segunda/Terça de Carnaval e Sexta-feira da Paixão (FEBRABAN/BCB/B3/ANBIMA).';
 
-function carnavalHoliday(
+function bankingHoliday(
   year: number,
   offset: number,
   id: string,
   namePt: string,
   nameEn: string,
+  citation: string,
+  source: string,
 ): Holiday {
   return {
     id,
@@ -45,15 +57,18 @@ function carnavalHoliday(
     namePt,
     nameEn,
     type: 'optional',
-    law: `${BANKING_LAW}; FEBRABAN — Feriados Bancários (Carnaval)`,
-    source: BANKING_SOURCE,
+    law: `${BANKING_LAW}; ${citation}`,
+    source,
     note: BANKING_NOTE,
   };
 }
 
 /**
  * Holidays of the banking calendar for `year`: national (and optionally the
- * requested scope) holidays plus Carnaval Monday/Tuesday.
+ * requested scope) holidays plus Carnaval Monday/Tuesday and Good Friday.
+ *
+ * When a civil rule already occupies one of those dates its citation is kept
+ * in `alsoDeclaredBy` instead of being dropped.
  */
 export function bankingHolidays(year: number, options: HolidayOptions = {}): Holiday[] {
   const forcedInclude: readonly HolidayType[] | undefined =
@@ -64,28 +79,55 @@ export function bankingHolidays(year: number, options: HolidayOptions = {}): Hol
     ...(options.uf === undefined ? {} : { uf: options.uf }),
     ...(options.city === undefined ? {} : { city: options.city }),
     ...(forcedInclude === undefined ? {} : { include: forcedInclude }),
+    ...(options.includeCustomaryNational === undefined
+      ? {}
+      : { includeCustomaryNational: options.includeCustomaryNational }),
   };
-  const carnaval = [
-    carnavalHoliday(
+  const special = [
+    bankingHoliday(
       year,
       -48,
       'bancario-carnaval-monday',
       'Segunda-feira de Carnaval (sem expediente bancário)',
       'Carnaval Monday (no banking business)',
+      'FEBRABAN — Feriados Bancários (Carnaval)',
+      BANKING_SOURCE,
     ),
-    carnavalHoliday(
+    bankingHoliday(
       year,
       -47,
       'bancario-carnaval-tuesday',
       'Terça-feira de Carnaval (sem expediente bancário)',
       'Carnaval Tuesday (no banking business)',
+      'FEBRABAN — Feriados Bancários (Carnaval)',
+      BANKING_SOURCE,
+    ),
+    bankingHoliday(
+      year,
+      -2,
+      'bancario-good-friday',
+      'Sexta-feira da Paixão (sem expediente bancário)',
+      'Good Friday (no banking business)',
+      'B3/ANBIMA/BCB/FEBRABAN — calendário de liquidação interbancária (Sexta-feira da Paixão)',
+      BANKING_GOOD_FRIDAY_SOURCE,
     ),
   ];
-  // Replace any ponto-facultativo rule already present on those dates so the
-  // returned metadata always carries the FEBRABAN/BCB banking citation.
-  const carnavalDates = new Set<string>(carnaval.map((holiday) => toISO(holiday.date)));
-  const base = holidays(year, baseOptions).filter(
-    (holiday) => !carnavalDates.has(toISO(holiday.date)),
+  // Replace any civil rule already present on a special date, preserving its
+  // legal citation in `alsoDeclaredBy` instead of losing it.
+  const specialDates = new Set<string>(special.map((holiday) => toISO(holiday.date)));
+  const replaced = new Map<string, Holiday[]>();
+  const base = holidays(year, baseOptions).filter((holiday) => {
+    const iso = toISO(holiday.date);
+    if (!specialDates.has(iso)) {
+      return true;
+    }
+    const group = replaced.get(iso) ?? [];
+    group.push(holiday);
+    replaced.set(iso, group);
+    return false;
+  });
+  const banking = special.map((holiday) =>
+    withAlsoDeclaredBy(holiday, replaced.get(toISO(holiday.date)) ?? []),
   );
-  return [...base, ...carnaval].sort((a, b) => compareDates(a.date, b.date));
+  return deduplicateHolidays([...base, ...banking]);
 }

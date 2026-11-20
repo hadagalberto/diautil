@@ -18,9 +18,10 @@ import {
   MAX_YEAR,
   type PlainDate,
 } from '../plain-date.js';
+import { deduplicateHolidays } from './dedupe.js';
 import { canonicalCapital, isUF, type UF } from './geo.js';
 import { municipalRulesByCapital } from './municipal.js';
-import { nationalRules } from './national.js';
+import { customaryNationalRules, nationalRules } from './national.js';
 import { evaluateRules } from './rules.js';
 import { stateRulesByUF } from './state.js';
 import type { Holiday, HolidayRule, HolidayType, Locale } from './types.js';
@@ -35,6 +36,12 @@ export interface HolidayOptions {
   readonly city?: string;
   /** Holiday types to consider. Defaults to `['national', 'state', 'municipal']`. */
   readonly include?: readonly HolidayType[];
+  /**
+   * Add Good Friday to the national calendar as a customary (not legal) national
+   * holiday. Off by default: Lei 9.093/1995 art. 2º makes it a municipal
+   * religious holiday, so `isHoliday('2026-04-03')` is false without a city.
+   */
+  readonly includeCustomaryNational?: boolean;
 }
 
 const DEFAULT_INCLUDE: readonly HolidayType[] = ['national', 'state', 'municipal'];
@@ -77,6 +84,9 @@ function canonicalCity(options: HolidayOptions): string | undefined {
 export function rulesForOptions(options: HolidayOptions = {}): HolidayRule[] {
   const city = canonicalCity(options);
   const rules: HolidayRule[] = [...nationalRules];
+  if (options.includeCustomaryNational === true) {
+    rules.push(...customaryNationalRules);
+  }
   if (options.uf !== undefined) {
     rules.push(...stateRulesByUF[options.uf]);
   }
@@ -88,7 +98,8 @@ export function rulesForOptions(options: HolidayOptions = {}): HolidayRule[] {
 
 function cacheKey(year: number, options: HolidayOptions, city: string | undefined): string {
   const include = options.include === undefined ? '' : [...options.include].sort().join(',');
-  return `${year}|${options.uf ?? ''}|${city ?? ''}|${include}`;
+  const customary = options.includeCustomaryNational === true ? 'customary' : '';
+  return `${year}|${options.uf ?? ''}|${city ?? ''}|${include}|${customary}`;
 }
 
 function allHolidaysInYear(
@@ -116,7 +127,12 @@ export function holidays(year: number, options: HolidayOptions = {}): Holiday[] 
   if (types.size === 0) {
     return [];
   }
-  return allHolidaysInYear(year, options, city).filter((holiday) => types.has(holiday.type));
+  const matched = allHolidaysInYear(year, options, city).filter((holiday) =>
+    types.has(holiday.type),
+  );
+  // Deduplicate AFTER the type filter so a narrower `include` never loses its
+  // own entry to a higher-precedence type the caller did not request.
+  return deduplicateHolidays(matched);
 }
 
 /** All holidays falling exactly on `date`. */

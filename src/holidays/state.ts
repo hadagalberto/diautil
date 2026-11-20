@@ -13,40 +13,42 @@ import type { HolidayRule } from './types.js';
 /** Verified state holiday rules, keyed by federative unit. */
 export const stateRulesByUF: Readonly<Record<UF, readonly HolidayRule[]>> = {
   AC: [
-    // Lei nº 3.137, de 23/05/2016; transferência prevista na Lei nº 2.126/2009.
-    // https://legis.ac.gov.br/detalhar/6624
+    // Lei nº 3.137, de 27/06/2016 — ALEAC (texto da lei); transferência prevista
+    // na Lei nº 2.126/2009. https://app.al.ac.leg.br/legisla-e/legislacao/visualizar/7141
     stateFixed('AC', {
       id: 'catolico',
       month: 1,
       day: 20,
       namePt: 'Dia do Católico',
       nameEn: 'Catholic Day',
-      law: 'Lei nº 3.137, de 23 de maio de 2016',
-      source: 'https://legis.ac.gov.br/detalhar/6624',
+      law: 'Lei nº 3.137, de 27 de junho de 2016',
+      source: 'https://app.al.ac.leg.br/legisla-e/legislacao/visualizar/7141',
       note: 'Transferível por decreto; data legal canônica 20/01.',
     }),
-    // Lei nº 1.538, de 12/01/2004. https://legis.ac.gov.br/detalhar/6624
+    // Lei nº 1.538, de 29/01/2004 — ALEAC (texto da lei).
+    // https://app.al.ac.leg.br/legisla-e/legislacao/visualizar/5497
     stateFixed('AC', {
       id: 'evangelico',
       month: 1,
       day: 23,
       namePt: 'Dia do Evangélico',
       nameEn: 'Evangelical Day',
-      law: 'Lei nº 1.538, de 12 de janeiro de 2004',
-      source: 'https://legis.ac.gov.br/detalhar/6624',
+      law: 'Lei nº 1.538, de 29 de janeiro de 2004',
+      source: 'https://app.al.ac.leg.br/legisla-e/legislacao/visualizar/5497',
     }),
-    // Lei nº 1.411, de 04/07/2001. https://legis.ac.gov.br/detalhar/6624
+    // Lei nº 1.411, de 14/09/2001 — ALEAC (texto da lei).
+    // https://app.al.ac.leg.br/legisla-e/legislacao/visualizar/5382
     stateFixed('AC', {
       id: 'mulher',
       month: 3,
       day: 8,
       namePt: 'Dia Internacional da Mulher',
       nameEn: "International Women's Day",
-      law: 'Lei nº 1.411, de 4 de julho de 2001',
-      source: 'https://legis.ac.gov.br/detalhar/6624',
+      law: 'Lei nº 1.411, de 14 de setembro de 2001',
+      source: 'https://app.al.ac.leg.br/legisla-e/legislacao/visualizar/5382',
     }),
-    // Lei nº 14, de 02/09/1964.
-    // https://agencia.ac.gov.br/wp-content/uploads/2025/12/Calendario-1-1.pdf
+    // Lei nº 14, de 02/09/1964 — Legisla-e/Aleac (texto da lei).
+    // https://app.al.ac.leg.br/legisla-e/legislacao/visualizar/8231
     stateFixed('AC', {
       id: 'aniversario',
       month: 6,
@@ -54,10 +56,11 @@ export const stateRulesByUF: Readonly<Record<UF, readonly HolidayRule[]>> = {
       namePt: 'Aniversário do Estado do Acre',
       nameEn: 'Anniversary of Acre State',
       law: 'Lei nº 14, de 2 de setembro de 1964',
-      source: 'https://agencia.ac.gov.br/wp-content/uploads/2025/12/Calendario-1-1.pdf',
+      source: 'https://app.al.ac.leg.br/legisla-e/legislacao/visualizar/8231',
       since: 1964,
     }),
-    // Lei nº 243, de 04/12/1968. https://legis.ac.gov.br/detalhar/6624
+    // Lei nº 243, de 04/12/1968 — ALEAC (texto da lei).
+    // https://app.al.ac.leg.br/legisla-e/legislacao/visualizar/7592
     stateFixed('AC', {
       id: 'amazonia',
       month: 9,
@@ -65,24 +68,25 @@ export const stateRulesByUF: Readonly<Record<UF, readonly HolidayRule[]>> = {
       namePt: 'Dia da Amazônia',
       nameEn: 'Amazon Day',
       law: 'Lei nº 243, de 4 de dezembro de 1968',
-      source: 'https://legis.ac.gov.br/detalhar/6624',
+      source: 'https://app.al.ac.leg.br/legisla-e/legislacao/visualizar/7592',
     }),
-    // Lei nº 57, de 02/12/1965. https://legis.ac.gov.br/detalhar/6624
+    // Lei nº 57, de 14/12/1965 — ALEAC (texto da lei).
+    // https://app.al.ac.leg.br/legisla-e/legislacao/visualizar/7943
     stateFixed('AC', {
       id: 'tratado-petropolis',
       month: 11,
       day: 17,
       namePt: 'Tratado de Petrópolis',
       nameEn: 'Treaty of Petrópolis',
-      law: 'Lei nº 57, de 2 de dezembro de 1965',
-      source: 'https://legis.ac.gov.br/detalhar/6624',
+      law: 'Lei nº 57, de 14 de dezembro de 1965',
+      source: 'https://app.al.ac.leg.br/legisla-e/legislacao/visualizar/7943',
       note: 'Transferível por decreto; data legal canônica 17/11.',
     }),
   ],
 
   AL: [
-    // Lei nº 5.508, de 07/07/1993.
-    // https://alagoas.al.gov.br/noticia/governo-de-alagoas-publica-decreto-com-feriados-e-pontos-facultativos-para-2026
+    // Lei nº 5.508, de 07/07/1993 — SAPL/Alesc (norma e texto original).
+    // https://sapl.al.al.leg.br/norma/3363
     stateFixed('AL', {
       id: 'sao-joao',
       month: 6,
@@ -90,10 +94,10 @@ export const stateRulesByUF: Readonly<Record<UF, readonly HolidayRule[]>> = {
       namePt: 'Dia de São João',
       nameEn: "St. John's Day",
       law: 'Lei nº 5.508, de 7 de julho de 1993',
-      source:
-        'https://alagoas.al.gov.br/noticia/governo-de-alagoas-publica-decreto-com-feriados-e-pontos-facultativos-para-2026',
+      source: 'https://sapl.al.al.leg.br/norma/3363',
     }),
-    // Lei nº 5.509, de 07/07/1993. (same official source)
+    // Lei nº 5.509, de 07/07/1993 — SAPL/Alesc.
+    // https://sapl.al.al.leg.br/norma/3364
     stateFixed('AL', {
       id: 'sao-pedro',
       month: 6,
@@ -101,21 +105,22 @@ export const stateRulesByUF: Readonly<Record<UF, readonly HolidayRule[]>> = {
       namePt: 'Dia de São Pedro',
       nameEn: "St. Peter's Day",
       law: 'Lei nº 5.509, de 7 de julho de 1993',
-      source:
-        'https://alagoas.al.gov.br/noticia/governo-de-alagoas-publica-decreto-com-feriados-e-pontos-facultativos-para-2026',
+      source: 'https://sapl.al.al.leg.br/norma/3364',
     }),
-    // Lei nº 5.724, de 01/08/1995. (same official source)
+    // Norma vigente localizada: Lei nº 9.358, de 26/08/2024 — SAPL/Alesc.
+    // https://sapl.al.al.leg.br/norma/3117
     stateFixed('AL', {
       id: 'emancipacao',
       month: 9,
       day: 16,
       namePt: 'Emancipação Política de Alagoas',
       nameEn: 'Alagoas Political Emancipation',
-      law: 'Lei nº 5.724, de 1º de agosto de 1995',
-      source:
-        'https://alagoas.al.gov.br/noticia/governo-de-alagoas-publica-decreto-com-feriados-e-pontos-facultativos-para-2026',
+      law: 'Lei nº 9.358, de 26 de agosto de 2024',
+      source: 'https://sapl.al.al.leg.br/norma/3117',
+      note: 'A Lei nº 5.724/1995 citada em fontes antigas não teve seu texto oficial localizado; a norma vigente é a Lei nº 9.358/2024.',
     }),
-    // Lei nº 7.530, de 08/08/2013. (same official source)
+    // Lei nº 7.530, de 08/08/2013 — SAPL/Alesc.
+    // https://sapl.al.al.leg.br/norma/561
     stateFixed('AL', {
       id: 'evangelico',
       month: 11,
@@ -123,8 +128,7 @@ export const stateRulesByUF: Readonly<Record<UF, readonly HolidayRule[]>> = {
       namePt: 'Dia Estadual do Evangélico',
       nameEn: 'State Day of the Evangelical',
       law: 'Lei nº 7.530, de 8 de agosto de 2013',
-      source:
-        'https://alagoas.al.gov.br/noticia/governo-de-alagoas-publica-decreto-com-feriados-e-pontos-facultativos-para-2026',
+      source: 'https://sapl.al.al.leg.br/norma/561',
     }),
   ],
 
@@ -182,8 +186,8 @@ export const stateRulesByUF: Readonly<Record<UF, readonly HolidayRule[]>> = {
   ],
 
   CE: [
-    // Emenda Constitucional nº 73, de 01/12/2011 (Constituição do Ceará).
-    // https://www.al.ce.gov.br/noticias/ceara-comemora-data-magna-nesta-quarta-feira
+    // Emenda Constitucional nº 73, de 01/12/2011 — Banco de Emendas/Alece.
+    // https://belt.al.ce.gov.br/index.php/constituicao-do-ceara/emendas-a-constituicao-do-ceara/item/5643-emenda-constitucional-n-73-de-1-de-dezembro-de-2011-d-o-06-12-11
     stateFixed('CE', {
       id: 'data-magna',
       month: 3,
@@ -191,7 +195,8 @@ export const stateRulesByUF: Readonly<Record<UF, readonly HolidayRule[]>> = {
       namePt: 'Data Magna do Ceará',
       nameEn: 'Ceará State Data Magna',
       law: 'Emenda Constitucional nº 73, de 1º de dezembro de 2011',
-      source: 'https://www.al.ce.gov.br/noticias/ceara-comemora-data-magna-nesta-quarta-feira',
+      source:
+        'https://belt.al.ce.gov.br/index.php/constituicao-do-ceara/emendas-a-constituicao-do-ceara/item/5643-emenda-constitucional-n-73-de-1-de-dezembro-de-2011-d-o-06-12-11',
       note: '19/03 é feriado municipal de Fortaleza, não feriado estadual.',
     }),
   ],
@@ -300,16 +305,15 @@ export const stateRulesByUF: Readonly<Record<UF, readonly HolidayRule[]>> = {
       law: 'Lei nº 2.457, de 2 de outubro de 1964, art. 1º',
       source: 'http://arquivos.al.ma.leg.br:8080/ged/legislacao/LEI_2457',
     }),
-    // Lei nº 11.539, de 21/09/2021 — constitucionalidade confirmada pelo TJMA.
-    // https://www.tjma.jus.br/midia/portal/noticia/512660/tjma-julga-constitucional-lei-que-tornou-corpus-christi-feriado-estadual
+    // Lei nº 11.539, de 21/09/2021 — ALEMA (repositório oficial de leis).
+    // https://arquivos.al.ma.leg.br:8443/ged/legislacao/LEI_11539
     stateEaster('MA', {
       id: 'corpus-christi',
       offset: 60,
       namePt: 'Corpus Christi',
       nameEn: 'Corpus Christi',
       law: 'Lei nº 11.539, de 21 de setembro de 2021',
-      source:
-        'https://www.tjma.jus.br/midia/portal/noticia/512660/tjma-julga-constitucional-lei-que-tornou-corpus-christi-feriado-estadual',
+      source: 'https://arquivos.al.ma.leg.br:8443/ged/legislacao/LEI_11539',
       since: 2021,
       note: 'Decreto executivo anual ainda trata a data como ponto facultativo na administração estadual.',
     }),
@@ -336,8 +340,8 @@ export const stateRulesByUF: Readonly<Record<UF, readonly HolidayRule[]>> = {
   ],
 
   MT: [
-    // Lei nº 7.879, de 27/12/2002 — feriado estadual de 20/11, anterior à Lei federal 14.759/2023.
-    // https://www.tre-mt.jus.br/legislacao/compilada/portaria/2025/portaria-pre-no-511-de-17-de-novembro-de-2025
+    // Lei nº 7.879, de 27/12/2002 — ALMT (norma jurídica, texto original).
+    // https://www.al.mt.gov.br/norma-juridica/urn:lex:br;mato.grosso:estadual:lei.ordinaria:2002-12-27;7879/ficha-tecnica
     stateFixed('MT', {
       id: 'consciencia-negra',
       month: 11,
@@ -346,14 +350,14 @@ export const stateRulesByUF: Readonly<Record<UF, readonly HolidayRule[]>> = {
       nameEn: 'Black Consciousness Day',
       law: 'Lei nº 7.879, de 27 de dezembro de 2002',
       source:
-        'https://www.tre-mt.jus.br/legislacao/compilada/portaria/2025/portaria-pre-no-511-de-17-de-novembro-de-2025',
+        'https://www.al.mt.gov.br/norma-juridica/urn:lex:br;mato.grosso:estadual:lei.ordinaria:2002-12-27;7879/ficha-tecnica',
       since: 2003,
     }),
   ],
 
   PA: [
-    // Lei nº 5.999, de 10/09/1996.
-    // https://www.alepa.pa.gov.br/Comunicacao/Noticia/7352/adesao-do-para-celebra-a-independencia-e-destacase-como-data-magna-no-estado
+    // Lei nº 5.999, de 10/09/1996 — Alepa (banco de leis, texto original).
+    // https://bancodeleis.alepa.pa.gov.br/arquivos/lei5999_1996_93239.pdf
     stateFixed('PA', {
       id: 'adesao-independencia',
       month: 8,
@@ -361,8 +365,7 @@ export const stateRulesByUF: Readonly<Record<UF, readonly HolidayRule[]>> = {
       namePt: 'Adesão do Grão-Pará à Independência do Brasil',
       nameEn: "Pará's Accession to Brazilian Independence",
       law: 'Lei nº 5.999, de 10 de setembro de 1996',
-      source:
-        'https://www.alepa.pa.gov.br/Comunicacao/Noticia/7352/adesao-do-para-celebra-a-independencia-e-destacase-como-data-magna-no-estado',
+      source: 'https://bancodeleis.alepa.pa.gov.br/arquivos/lei5999_1996_93239.pdf',
     }),
   ],
 
@@ -464,8 +467,8 @@ export const stateRulesByUF: Readonly<Record<UF, readonly HolidayRule[]>> = {
   ],
 
   RN: [
-    // Lei Ordinária nº 8.913, de 06/12/2006.
-    // https://www.al.rn.leg.br/legislacao/legislacao-estadual
+    // Lei Ordinária nº 8.913, de 06/12/2006 — ALRN (texto original).
+    // https://www.al.rn.leg.br/storage/legislacao//arq5064574f632ec.pdf
     stateFixed('RN', {
       id: 'protomartires',
       month: 10,
@@ -473,7 +476,7 @@ export const stateRulesByUF: Readonly<Record<UF, readonly HolidayRule[]>> = {
       namePt: 'Memória dos Protomártires de Uruaçu e Cunhaú',
       nameEn: 'Memory of the Protomartyrs of Uruaçu and Cunhaú',
       law: 'Lei Ordinária nº 8.913, de 6 de dezembro de 2006',
-      source: 'https://www.al.rn.leg.br/legislacao/legislacao-estadual',
+      source: 'https://www.al.rn.leg.br/storage/legislacao//arq5064574f632ec.pdf',
     }),
   ],
 

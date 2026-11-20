@@ -24,7 +24,7 @@ const VERSION = '0.1.0';
 const HELP = `diautil ${VERSION} — feriados e calendário brasileiro
 
 Uso:
-  diautil feriados <ano> [--uf UF] [--cidade NOME] [--json]
+  diautil feriados <ano> [--uf UF] [--cidade NOME] [--customarios] [--json]
   diautil util <data> [--uf UF] [--cidade NOME] [--calendario civil|bancario] [--json]
   diautil soma <data> <n> [--calendario civil|bancario] [--json]
   diautil entre <inicio> <fim> [--uf UF] [--cidade NOME] [--inclusive] [--json]
@@ -36,6 +36,7 @@ Opções:
   --cidade NOME    capital cujos feriados municipais entram no calendário
   --calendario T   calendário: civil (padrão) ou bancario
   --inclusive      conta as duas datas em "entre"
+  --customarios    inclui a Sexta-feira da Paixão como feriado nacional costumeiro
   --json           saída legível por máquina
   -h, --help       mostra esta ajuda
 `;
@@ -104,11 +105,13 @@ function readCalendarKind(flags: ReadonlyMap<string, string | true>): CalendarKi
 function readFlags(flags: ReadonlyMap<string, string | true>): CalendarFlags {
   const uf = readUf(flags);
   const city = flags.get('--cidade');
+  const customary = flags.has('--customarios');
   return {
     calendar: readCalendarKind(flags),
     options: {
       ...(uf === undefined ? {} : { uf }),
       ...(city === undefined || typeof city !== 'string' ? {} : { city }),
+      ...(customary ? { includeCustomaryNational: true } : {}),
     },
   };
 }

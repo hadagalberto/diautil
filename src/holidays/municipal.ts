@@ -11,21 +11,10 @@ import type { HolidayRule } from './types.js';
 
 /** Verified municipal holiday rules, keyed by canonical capital name. */
 export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRule[]>> = {
-  'Rio Branco': [
-    // Lei Municipal nº 1.557, de 05/12/2005 + parágrafo único acrescentado pela
-    // Lei nº 1.609, de 25/10/2006. Confederação pelo calendário oficial RBPREV.
-    // https://portalcgm.riobranco.ac.gov.br/lai/institucional/prefeito/
-    municipalFixed('Rio Branco', {
-      id: 'aniversario',
-      month: 12,
-      day: 28,
-      namePt: 'Aniversário do Município de Rio Branco',
-      nameEn: 'Anniversary of Rio Branco',
-      law: 'Lei Municipal nº 1.557, de 5 de dezembro de 2005; Lei Municipal nº 1.609, de 25 de outubro de 2006',
-      source: 'https://portalcgm.riobranco.ac.gov.br/lai/institucional/prefeito/',
-      since: 2006,
-    }),
-  ],
+  // Rio Branco: as Leis 1.557/2005 e 1.609/2006 só aparecem em páginas
+  // institucionais/decretos anuais; texto oficial não localizado.
+  // Ver docs/unverified.md.
+  'Rio Branco': [],
 
   Maceió: [
     // Lei Municipal nº 1.391, de 16/05/1967; Decreto nº 10.234/2025.
@@ -140,20 +129,9 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
     }),
   ],
 
-  Macapá: [
-    // Lei nº 128/80 — lei confirmada pela Prefeitura de Macapá em comunicado oficial.
-    // https://agencia.macapa.ap.gov.br/prefeitura-decreta-feriado-de-nossa-senhora-da-conceicao-nesta-segunda-feira-8-veja-como-funcionara-o-atendimento-publico
-    municipalFixed('Macapá', {
-      id: 'conceicao',
-      month: 12,
-      day: 8,
-      namePt: 'Nossa Senhora da Conceição',
-      nameEn: 'Immaculate Conception',
-      law: 'Lei Municipal nº 128, de 1980',
-      source:
-        'https://agencia.macapa.ap.gov.br/prefeitura-decreta-feriado-de-nossa-senhora-da-conceicao-nesta-segunda-feira-8-veja-como-funcionara-o-atendimento-publico',
-    }),
-  ],
+  // Macapá: Lei 128/1980 citada apenas em comunicado de feriado pontual.
+  // Ver docs/unverified.md.
+  Macapá: [],
 
   Salvador: [
     // Lei Municipal nº 1.997, de 21/06/1967 — tabela oficial INPI.
@@ -268,16 +246,8 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
   ],
 
   Goiânia: [
-    // Lei nº 701/1956. https://www.goiania.go.gov.br/shtml/guarda/eventos.shtml
-    municipalFixed('Goiânia', {
-      id: 'padroeira',
-      month: 5,
-      day: 24,
-      namePt: 'Nossa Senhora Auxiliadora, Padroeira de Goiânia',
-      nameEn: 'Our Lady of Help, Patron Saint of Goiânia',
-      law: 'Lei nº 701, de 1956',
-      source: 'https://www.goiania.go.gov.br/shtml/guarda/eventos.shtml',
-    }),
+    // Lei nº 701/1956 (24/05): só referida em DOM e página de eventos; texto
+    // oficial não localizado. Movida para docs/unverified.md.
     // Lei nº 6.968, de 19/06/1991.
     // https://www.goiania.go.gov.br/html/gabinete_civil/sileg/dados/legis/1991/lo_19910619_000006968.html
     municipalFixed('Goiânia', {
@@ -394,18 +364,8 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
   ],
 
   'Campo Grande': [
-    // Lei Municipal nº 3.901, de 29/10/2001.
-    // https://www.campogrande.ms.gov.br/cgnoticias/noticia/no-dia-do-padroeiro-missa-campal-reune-5-mil-fieis-na-praca-do-radio/
-    municipalFixed('Campo Grande', {
-      id: 'santo-antonio',
-      month: 6,
-      day: 13,
-      namePt: 'Dia de Santo Antônio, Padroeiro de Campo Grande',
-      nameEn: "St. Anthony's Day, Patron Saint of Campo Grande",
-      law: 'Lei Municipal nº 3.901, de 29 de outubro de 2001',
-      source:
-        'https://www.campogrande.ms.gov.br/cgnoticias/noticia/no-dia-do-padroeiro-missa-campal-reune-5-mil-fieis-na-praca-do-radio/',
-    }),
+    // Lei Municipal nº 3.901/2001 (13/06) só aparece em notícia de missa;
+    // movida para docs/unverified.md.
     // Lei Municipal nº 1.019, de 16/05/1967, art. 1º — texto oficial no TRT24.
     // https://www.trt24.jus.br/documents/20182/3304070/Lei+municipal+Campo+Grande+anivers%C3%A1rio+e+Corpus+Christi.pdf/228c4212-ef65-4b92-aea3-7da039be2d58
     municipalFixed('Campo Grande', {
@@ -467,42 +427,9 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
     }),
   ],
 
-  Belém: [
-    // Decreto nº 113.488, de 14/02/2025 (calendário oficial da Prefeitura).
-    // https://pgm.belem.pa.gov.br/legislacao/calendario-eventos
-    municipalFixed('Belém', {
-      id: 'aniversario',
-      month: 1,
-      day: 12,
-      namePt: 'Aniversário de Belém',
-      nameEn: 'Anniversary of Belém',
-      law: 'Decreto Municipal nº 113.488, de 14 de fevereiro de 2025',
-      source: 'https://pgm.belem.pa.gov.br/legislacao/calendario-eventos',
-      note: 'Lei municipal instituidora original não localizada; data confirmada no calendário oficial.',
-    }),
-    // Decreto nº 113.488/2025. (same official source)
-    municipalFixed('Belém', {
-      id: 'pos-cirio',
-      month: 10,
-      day: 12,
-      namePt: 'Pós-Círio',
-      nameEn: 'Post-Círio',
-      law: 'Decreto Municipal nº 113.488, de 14 de fevereiro de 2025',
-      source: 'https://pgm.belem.pa.gov.br/legislacao/calendario-eventos',
-      note: 'Lei municipal instituidora original não localizada; data confirmada no calendário oficial.',
-    }),
-    // Decreto nº 113.488/2025. (same official source)
-    municipalFixed('Belém', {
-      id: 'conceicao',
-      month: 12,
-      day: 8,
-      namePt: 'Nossa Senhora da Conceição',
-      nameEn: 'Immaculate Conception',
-      law: 'Decreto Municipal nº 113.488, de 14 de fevereiro de 2025',
-      source: 'https://pgm.belem.pa.gov.br/legislacao/calendario-eventos',
-      note: 'Lei municipal instituidora original não localizada; data confirmada no calendário oficial.',
-    }),
-  ],
+  // Belém: apenas o Decreto 113.488/2025 (calendário/eventos) e nenhuma lei
+  // municipal instituidora foi localizada em fonte oficial. Ver docs/unverified.md.
+  Belém: [],
 
   'João Pessoa': [
     // Lei Ordinária nº 13.768, de 04/07/2019, art. 5º, II.
@@ -575,15 +502,16 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
 
   Teresina: [
     // Lei Municipal nº 2.275, de 11/01/1994, § 1º (redação Lei nº 2.847/1999).
-    // https://pmt.pi.gov.br/wp-content/uploads/sites/34/2020/06/Lei-n%C2%BA-5.510-de-14.04.2020-Covid-19-Antecipa-Feriado-Anivers%C3%A1rio-de-Teresina....pdf
+    // Compilação oficial TRF1 "Leis Básicas do Município de Teresina".
+    // https://www.trf1.jus.br/sjpi/conteudo/files/leisbasicasTeresina.pdf
+    // A Lei 5.510/2020 (antecipação COVID) apenas moveu uma data e não é a norma base.
     municipalEaster('Teresina', {
       id: 'sexta-feira-santa',
       offset: -2,
       namePt: 'Sexta-Feira Santa',
       nameEn: 'Good Friday',
       law: 'Lei Municipal nº 2.275, de 11 de janeiro de 1994, § 1º (Lei nº 2.847, de 1999)',
-      source:
-        'https://pmt.pi.gov.br/wp-content/uploads/sites/34/2020/06/Lei-n%C2%BA-5.510-de-14.04.2020-Covid-19-Antecipa-Feriado-Anivers%C3%A1rio-de-Teresina....pdf',
+      source: 'https://www.trf1.jus.br/sjpi/conteudo/files/leisbasicasTeresina.pdf',
     }),
     // Lei Municipal nº 2.275/1994. (same official source)
     municipalEaster('Teresina', {
@@ -592,8 +520,7 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
       namePt: 'Corpus Christi',
       nameEn: 'Corpus Christi',
       law: 'Lei Municipal nº 2.275, de 11 de janeiro de 1994, § 1º (Lei nº 2.847, de 1999)',
-      source:
-        'https://pmt.pi.gov.br/wp-content/uploads/sites/34/2020/06/Lei-n%C2%BA-5.510-de-14.04.2020-Covid-19-Antecipa-Feriado-Anivers%C3%A1rio-de-Teresina....pdf',
+      source: 'https://www.trf1.jus.br/sjpi/conteudo/files/leisbasicasTeresina.pdf',
     }),
     // Lei Municipal nº 2.275/1994. (same official source)
     municipalFixed('Teresina', {
@@ -603,8 +530,7 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
       namePt: 'Dia de Finados',
       nameEn: "All Souls' Day",
       law: 'Lei Municipal nº 2.275, de 11 de janeiro de 1994, § 1º (Lei nº 2.847, de 1999)',
-      source:
-        'https://pmt.pi.gov.br/wp-content/uploads/sites/34/2020/06/Lei-n%C2%BA-5.510-de-14.04.2020-Covid-19-Antecipa-Feriado-Anivers%C3%A1rio-de-Teresina....pdf',
+      source: 'https://www.trf1.jus.br/sjpi/conteudo/files/leisbasicasTeresina.pdf',
     }),
     // Lei Municipal nº 2.275/1994. (same official source)
     municipalFixed('Teresina', {
@@ -614,8 +540,7 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
       namePt: 'Nossa Senhora da Conceição',
       nameEn: 'Immaculate Conception',
       law: 'Lei Municipal nº 2.275, de 11 de janeiro de 1994, § 1º (Lei nº 2.847, de 1999)',
-      source:
-        'https://pmt.pi.gov.br/wp-content/uploads/sites/34/2020/06/Lei-n%C2%BA-5.510-de-14.04.2020-Covid-19-Antecipa-Feriado-Anivers%C3%A1rio-de-Teresina....pdf',
+      source: 'https://www.trf1.jus.br/sjpi/conteudo/files/leisbasicasTeresina.pdf',
     }),
     // Lei Municipal nº 2.275/1994. (same official source)
     municipalFixed('Teresina', {
@@ -625,8 +550,7 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
       namePt: 'Aniversário de Teresina',
       nameEn: 'Anniversary of Teresina',
       law: 'Lei Municipal nº 2.275, de 11 de janeiro de 1994, § 1º (Lei nº 2.847, de 1999)',
-      source:
-        'https://pmt.pi.gov.br/wp-content/uploads/sites/34/2020/06/Lei-n%C2%BA-5.510-de-14.04.2020-Covid-19-Antecipa-Feriado-Anivers%C3%A1rio-de-Teresina....pdf',
+      source: 'https://www.trf1.jus.br/sjpi/conteudo/files/leisbasicasTeresina.pdf',
     }),
   ],
 
@@ -704,8 +628,7 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
       namePt: 'Instalação do Município / São Francisco de Sales',
       nameEn: 'Installation of Porto Velho / St. Francis de Sales',
       law: 'Lei Municipal nº 190, de 14 de outubro de 1980',
-      source:
-        'https://www.portovelho.ro.gov.br/artigo/18561/feriado-24-de-maio-dia-de-nossa-senhora-auxiliadora-padroeira-do-municipio',
+      source: 'https://sapl.portovelho.ro.leg.br/norma/4274',
     }),
     // Lei Municipal nº 190/1980. (same official source)
     municipalFixed('Porto Velho', {
@@ -715,8 +638,7 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
       namePt: 'Nossa Senhora Auxiliadora, Padroeira do Município',
       nameEn: 'Our Lady of Help, Patron Saint of Porto Velho',
       law: 'Lei Municipal nº 190, de 14 de outubro de 1980',
-      source:
-        'https://www.portovelho.ro.gov.br/artigo/18561/feriado-24-de-maio-dia-de-nossa-senhora-auxiliadora-padroeira-do-municipio',
+      source: 'https://sapl.portovelho.ro.leg.br/norma/4274',
     }),
     // Lei Municipal nº 190/1980. (same official source)
     municipalFixed('Porto Velho', {
@@ -726,62 +648,25 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
       namePt: 'Criação do Município de Porto Velho',
       nameEn: 'Creation of Porto Velho',
       law: 'Lei Municipal nº 190, de 14 de outubro de 1980',
-      source:
-        'https://www.portovelho.ro.gov.br/artigo/18561/feriado-24-de-maio-dia-de-nossa-senhora-auxiliadora-padroeira-do-municipio',
+      source: 'https://sapl.portovelho.ro.leg.br/norma/4274',
     }),
   ],
 
-  'Boa Vista': [
-    // Lei Municipal nº 104/84 — Prefeitura de Boa Vista.
-    // https://boavista.rr.gov.br/noticias/2026/1/prefeitura-garante-servicos-essenciais-durante-feriado-prolongado-de-sao-sebastiao
-    municipalFixed('Boa Vista', {
-      id: 'sao-sebastiao',
-      month: 1,
-      day: 20,
-      namePt: 'Dia de São Sebastião, Padroeiro de Boa Vista',
-      nameEn: 'St. Sebastian, Patron Saint of Boa Vista',
-      law: 'Lei Municipal nº 104, de 1984',
-      source:
-        'https://boavista.rr.gov.br/noticias/2026/1/prefeitura-garante-servicos-essenciais-durante-feriado-prolongado-de-sao-sebastiao',
-    }),
-    // Lei Municipal nº 104/84.
-    // https://boavista.rr.gov.br/noticias/2026/6/comunicado-servicos-essenciais-funcionarao-normalmente-durante-feriado-de-sao-pedro
-    municipalFixed('Boa Vista', {
-      id: 'sao-pedro',
-      month: 6,
-      day: 29,
-      namePt: 'Dia de São Pedro',
-      nameEn: "St. Peter's Day",
-      law: 'Lei Municipal nº 104, de 1984',
-      source:
-        'https://boavista.rr.gov.br/noticias/2026/6/comunicado-servicos-essenciais-funcionarao-normalmente-durante-feriado-de-sao-pedro',
-    }),
-    // Lei Municipal nº 1.705/2016.
-    // https://boavista.rr.gov.br/noticias/2026/7/prefeitura-mantera-funcionamento-dos-servicos-essenciais-durante-feriadao-de-aniversario-de-boa-vista
-    municipalFixed('Boa Vista', {
-      id: 'aniversario',
-      month: 7,
-      day: 9,
-      namePt: 'Aniversário de Boa Vista',
-      nameEn: 'Boa Vista Anniversary',
-      law: 'Lei Municipal nº 1.705, de 2016',
-      source:
-        'https://boavista.rr.gov.br/noticias/2026/7/prefeitura-mantera-funcionamento-dos-servicos-essenciais-durante-feriadao-de-aniversario-de-boa-vista',
-    }),
-  ],
+  // Boa Vista: Leis 104/1984 e 1.705/2016 citadas apenas em notícias da
+  // prefeitura; textos oficiais não localizados. Ver docs/unverified.md.
+  'Boa Vista': [],
 
   'Porto Alegre': [
-    // Lei Municipal nº 3.033, de 1967 — Prefeitura de Porto Alegre.
-    // https://prefeitura.poa.br/gcs/noticias/aniversario-de-porto-alegre-nao-e-feriado-municipal
+    // Lei Municipal nº 3.033, de 30 de junho de 1967 — PGM/SAPL Porto Alegre.
+    // https://legislacao.portoalegre.rs.gov.br/norma/15329
     municipalFixed('Porto Alegre', {
       id: 'navegantes',
       month: 2,
       day: 2,
       namePt: 'Dia de Nossa Senhora dos Navegantes e Iemanjá',
       nameEn: 'Our Lady of Navigators / Iemanjá Day',
-      law: 'Lei Municipal nº 3.033, de 1967',
-      source:
-        'https://prefeitura.poa.br/gcs/noticias/aniversario-de-porto-alegre-nao-e-feriado-municipal',
+      law: 'Lei Municipal nº 3.033, de 30 de junho de 1967',
+      source: 'https://legislacao.portoalegre.rs.gov.br/norma/15329',
     }),
     // Lei Municipal nº 3.033/1967. (same official source)
     municipalEaster('Porto Alegre', {
@@ -789,9 +674,8 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
       offset: -2,
       namePt: 'Sexta-Feira da Paixão',
       nameEn: 'Good Friday',
-      law: 'Lei Municipal nº 3.033, de 1967',
-      source:
-        'https://prefeitura.poa.br/gcs/noticias/aniversario-de-porto-alegre-nao-e-feriado-municipal',
+      law: 'Lei Municipal nº 3.033, de 30 de junho de 1967',
+      source: 'https://legislacao.portoalegre.rs.gov.br/norma/15329',
     }),
     // Lei Municipal nº 3.033/1967 (redação Lei nº 4.453/1978). (same official source)
     municipalEaster('Porto Alegre', {
@@ -799,9 +683,8 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
       offset: 60,
       namePt: 'Corpus Christi',
       nameEn: 'Corpus Christi',
-      law: 'Lei Municipal nº 3.033, de 1967 (Lei nº 4.453, de 1978)',
-      source:
-        'https://prefeitura.poa.br/gcs/noticias/aniversario-de-porto-alegre-nao-e-feriado-municipal',
+      law: 'Lei Municipal nº 3.033, de 30 de junho de 1967 (Lei nº 4.453, de 1978)',
+      source: 'https://legislacao.portoalegre.rs.gov.br/norma/15329',
     }),
     // Lei Municipal nº 3.033/1967 (redação Lei nº 13.591/2023). (same official source)
     municipalFixed('Porto Alegre', {
@@ -810,9 +693,8 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
       day: 2,
       namePt: 'Dia de Finados',
       nameEn: "All Souls' Day",
-      law: 'Lei Municipal nº 3.033, de 1967 (Lei nº 13.591, de 2023)',
-      source:
-        'https://prefeitura.poa.br/gcs/noticias/aniversario-de-porto-alegre-nao-e-feriado-municipal',
+      law: 'Lei Municipal nº 3.033, de 30 de junho de 1967 (Lei nº 13.591, de 2023)',
+      source: 'https://legislacao.portoalegre.rs.gov.br/norma/15329',
     }),
   ],
 
@@ -893,7 +775,8 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
       namePt: 'Sexta-Feira Santa',
       nameEn: 'Good Friday',
       law: 'Lei Municipal nº 14.485, de 19 de julho de 2007, art. 10',
-      source: 'http://legislacao.prefeitura.sp.gov.br/lei-20000-de-19-de-julho-de-2007',
+      source:
+        'https://plpconsulta.saopaulo.sp.leg.br/Forms/MostrarArquivo?ANO=2007&DOCUMENTO=Atualizado&NUMERO=14485&TIPO=Lei',
     }),
     // Lei Municipal nº 14.485/2007, art. 10. (same official source)
     municipalEaster('São Paulo', {
@@ -902,7 +785,8 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
       namePt: 'Corpus Christi',
       nameEn: 'Corpus Christi',
       law: 'Lei Municipal nº 14.485, de 19 de julho de 2007, art. 10',
-      source: 'http://legislacao.prefeitura.sp.gov.br/lei-20000-de-19-de-julho-de-2007',
+      source:
+        'https://plpconsulta.saopaulo.sp.leg.br/Forms/MostrarArquivo?ANO=2007&DOCUMENTO=Atualizado&NUMERO=14485&TIPO=Lei',
     }),
     // Lei Municipal nº 14.485/2007, art. 10. (same official source)
     municipalFixed('São Paulo', {
@@ -912,7 +796,8 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
       namePt: 'Aniversário da Cidade de São Paulo',
       nameEn: 'São Paulo Anniversary',
       law: 'Lei Municipal nº 14.485, de 19 de julho de 2007, art. 10',
-      source: 'http://legislacao.prefeitura.sp.gov.br/lei-20000-de-19-de-julho-de-2007',
+      source:
+        'https://plpconsulta.saopaulo.sp.leg.br/Forms/MostrarArquivo?ANO=2007&DOCUMENTO=Atualizado&NUMERO=14485&TIPO=Lei',
       note: 'A comemoração pode ser antecipada à 4ª segunda-feira de janeiro por decreto municipal.',
     }),
     // Lei Municipal nº 14.485/2007, art. 9. (same official source)
@@ -923,7 +808,8 @@ export const municipalRulesByCapital: Readonly<Record<string, readonly HolidayRu
       namePt: 'Dia da Consciência Negra',
       nameEn: 'Black Consciousness Day',
       law: 'Lei Municipal nº 14.485, de 19 de julho de 2007, art. 9',
-      source: 'http://legislacao.prefeitura.sp.gov.br/lei-20000-de-19-de-julho-de-2007',
+      source:
+        'https://plpconsulta.saopaulo.sp.leg.br/Forms/MostrarArquivo?ANO=2007&DOCUMENTO=Atualizado&NUMERO=14485&TIPO=Lei',
     }),
   ],
 
