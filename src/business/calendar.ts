@@ -41,6 +41,24 @@ import type {
 /** Saturday and Sunday, expressed with 0 = Sunday. */
 export const DEFAULT_WEEKENDS: readonly Weekday[] = [0, 6];
 
+/**
+ * Legal basis for the salary-payment deadline's "business day" count.
+ *
+ * CLT art. 459, § 1º sets the deadline at the 5th business day of the month
+ * following the worked month. The Ministério do Trabalho's official
+ * interpretation (Instrução Normativa SRT nº 01, de 07/11/1989, item I) counts
+ * Saturday as a business day and excludes Sundays and holidays — including
+ * municipal holidays — for this specific purpose. The same reading is restated
+ * in the current official norms (IN/MTP nº 2, de 08/11/2021 and IN/MTE/SIT nº 2,
+ * de 03/04/2025), both hosted on gov.br.
+ */
+export const QUINTO_DIA_SALARIO_LAW =
+  'CLT art. 459, § 1º (Lei nº 7.855/1989); Instrução Normativa SRT nº 01, de 07 de novembro de 1989, item I: "na contagem dos dias será incluído o sábado, excluindo-se o domingo e o feriado, inclusive o municipal"';
+
+/** Official gov.br/MTE text confirming Saturday counts for salary payment. */
+export const QUINTO_DIA_SALARIO_SOURCE =
+  'https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/inspecao-do-trabalho/areas-de-atuacao/documentos-pdf/in-2-de-8-denovembro-de-2021.pdf';
+
 interface YearData {
   readonly nonBusinessDays: readonly number[];
   readonly holidayDates: ReadonlySet<string>;
@@ -515,6 +533,24 @@ export function nthBusinessDayOfMonth(
   options: BusinessDayOptions = {},
 ): PlainDate {
   return createCalendar(options).nthBusinessDayOfMonth(year, month, nth);
+}
+
+/**
+ * 5º dia útil para pagamento de salário (CLT art. 459, § 1º).
+ *
+ * Different from `nthBusinessDayOfMonth`: for this legal deadline Saturday is
+ * a business day, while Sundays and holidays (including municipal ones) are
+ * not, per Instrução Normativa SRT nº 01/1989, item I. A `weekends` option is
+ * therefore ignored — the legal rule fixes the weekend as Sunday only.
+ *
+ * @see QUINTO_DIA_SALARIO_LAW and QUINTO_DIA_SALARIO_SOURCE.
+ */
+export function quintoDiaUtilSalario(
+  year: number,
+  month: number,
+  options: BusinessDayOptions = {},
+): PlainDate {
+  return createCalendar({ ...options, weekends: [0] }).nthBusinessDayOfMonth(year, month, 5);
 }
 
 /** Holidays of the configured calendar for a year (useful for inspection). */

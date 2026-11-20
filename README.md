@@ -180,6 +180,7 @@ import {
   nextBusinessDay,
   nthBusinessDayOfMonth,
   previousBusinessDay,
+  quintoDiaUtilSalario,
   toISO,
 } from 'diautil';
 
@@ -193,9 +194,19 @@ businessDaysBetween('2026-11-19', '2026-11-25', { inclusive: true }); // 4
 nextBusinessDay('2026-11-19'); // 2026-11-23
 previousBusinessDay('2026-11-23'); // 2026-11-19
 lastBusinessDayOfMonth(2026, 12); // 2026-12-31
-nthBusinessDayOfMonth(2026, 12, 5); // 2026-12-07 — 5º dia útil (CLT art. 459)
+nthBusinessDayOfMonth(2026, 12, 5); // 2026-12-07 — 5th Mon–Fri business day of the month
 nthBusinessDayOfMonth(2026, 12, -1); // 2026-12-31
+quintoDiaUtilSalario(2026, 12); // 2026-12-05 — legal salary deadline (CLT art. 459, § 1º)
 ```
+
+`nthBusinessDayOfMonth` always uses the calendar's weekend (Saturday and Sunday by default).
+The legal salary deadline is different: per the Ministério do Trabalho's official interpretation
+(Instrução Normativa SRT nº 01, de 07/11/1989, item I — reaffirmed by IN/MTP nº 2/2021), Saturday
+**counts** and only Sundays and holidays (including municipal ones) are excluded. For that reason
+`quintoDiaUtilSalario` ignores a `weekends` option and fixes the weekend to Sunday only;
+December 2026 therefore yields `2026-12-05` for the salary deadline but `2026-12-07` for the
+ordinary Mon–Fri count. Source:
+[gov.br/MTE IN nº 2/2021](https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/inspecao-do-trabalho/areas-de-atuacao/documentos-pdf/in-2-de-8-denovembro-de-2021.pdf).
 
 `addBusinessDays` accepts negative offsets, and `businessDaysBetween` is signed: swapping the
 endpoints negates the result. Months and years are cached per calendar, so counting across a
@@ -248,8 +259,9 @@ diautil --version
 ```
 
 All commands support `--json` for machine-readable output; `entre` also accepts `--inclusive`,
-and `--customarios` opts into the customary national Good Friday entry. Output is pt-BR by
-default; `--json` is stable and machine-readable.
+and `--customarios` opts into the customary national Good Friday entry. `quinto-dia-util` prints
+both the ordinary Mon–Fri date (`diaUtilSegSex`) and the legal salary date with Saturday counted
+(`diaUtilSalario`). Output is pt-BR by default; `--json` is stable and machine-readable.
 
 ## Development
 

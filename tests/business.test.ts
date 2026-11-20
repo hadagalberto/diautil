@@ -9,6 +9,7 @@ import {
   nthBusinessDayOfMonth,
   plainDate,
   previousBusinessDay,
+  quintoDiaUtilSalario,
   toISO,
 } from '../src/index.js';
 
@@ -120,6 +121,40 @@ describe('month helpers', () => {
     expect(() => nthBusinessDayOfMonth(2026, 13, 1)).toThrow(RangeError);
     expect(() => nthBusinessDayOfMonth(2026, 12, 99)).toThrow(RangeError);
     expect(() => lastBusinessDayOfMonth(1899, 1)).toThrow(RangeError);
+  });
+});
+
+describe('quintoDiaUtilSalario (CLT art. 459, § 1º + IN SRT 01/1989)', () => {
+  it('counts Saturday as a business day: December 2026 is 2026-12-05, not 2026-12-07', () => {
+    // 05/12/2026 is a Saturday. IN SRT 01/1989, item I includes it; only the
+    // ordinary Mon–Fri count lands on Monday 07/12.
+    expect(toISO(quintoDiaUtilSalario(2026, 12))).toBe('2026-12-05');
+    expect(toISO(nthBusinessDayOfMonth(2026, 12, 5))).toBe('2026-12-07');
+  });
+
+  it('still excludes holidays and Sundays, with known-valid vectors', () => {
+    // 01/01/2026 is New Year (holiday). Salary count: 02, 03(Sat), 05, 06, 07.
+    expect(toISO(quintoDiaUtilSalario(2026, 1))).toBe('2026-01-07');
+    // 02/11 is Finados (holiday) and 01/11 is a Sunday, so the count starts 03/11:
+    // 03, 04, 05, 06, 07(Sat) -> 07/11. Zumbi (20/11) is later in the month.
+    expect(toISO(quintoDiaUtilSalario(2026, 11))).toBe('2026-11-07');
+  });
+
+  it('excludes a Saturday holiday, including caller-provided ones', () => {
+    // With 05/12 removed as an extra holiday the 5th countable day is 07/12.
+    expect(toISO(quintoDiaUtilSalario(2026, 12, { extraHolidays: ['2026-12-05'] }))).toBe(
+      '2026-12-07',
+    );
+  });
+
+  it('ignores a caller weekends option — the legal weekend is Sunday only', () => {
+    expect(toISO(quintoDiaUtilSalario(2026, 12, { weekends: [0, 6] as const }))).toBe('2026-12-05');
+  });
+
+  it('rejects invalid month and year inputs', () => {
+    expect(() => quintoDiaUtilSalario(2026, 13)).toThrow(RangeError);
+    expect(() => quintoDiaUtilSalario(1899, 12)).toThrow(RangeError);
+    expect(() => quintoDiaUtilSalario(2200, 12)).toThrow(RangeError);
   });
 });
 

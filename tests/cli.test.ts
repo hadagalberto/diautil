@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const cliPath = join(repoRoot, 'dist', 'cli.js');
@@ -29,14 +29,6 @@ function runCli(args: readonly string[]): CliResult {
     };
   }
 }
-
-beforeAll(() => {
-  const npmCli = join(dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
-  execFileSync(process.execPath, [npmCli, 'run', 'build'], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-  });
-});
 
 describe('CLI (built binary)', () => {
   it('prints its version and help', () => {
@@ -194,23 +186,42 @@ describe('CLI (built binary)', () => {
     });
   });
 
-  it('computes the fifth business day of a month', () => {
-    expect(runCli(['quinto-dia-util', '2026-12']).stdout.trim()).toBe(
-      '5º dia útil de 2026-12: 2026-12-07',
+  it('shows both the Mon–Fri and the legal salary fifth business day', () => {
+    const text = runCli(['quinto-dia-util', '2026-12']);
+    expect(text.status).toBe(0);
+    expect(text.stdout).toContain('5º dia útil (seg–sex) de 2026-12: 2026-12-07');
+    expect(text.stdout).toContain(
+      '5º dia útil para salário (sábado incluso, CLT art. 459 § 1º) de 2026-12: 2026-12-05',
     );
+
     const json = runCli(['quinto-dia-util', '2026-12', '--json']);
+    expect(json.status).toBe(0);
     interface QuintoResult {
       readonly mes: string;
       readonly diaUtil: number;
-      readonly data: string;
       readonly calendario: string;
+      readonly diaUtilSegSex: string;
+      readonly diaUtilSalario: string;
     }
     expect(JSON.parse(json.stdout) as QuintoResult).toEqual({
       mes: '2026-12',
       diaUtil: 5,
-      data: '2026-12-07',
       calendario: 'civil',
+      diaUtilSegSex: '2026-12-07',
+      diaUtilSalario: '2026-12-05',
     });
+  });
+
+  it('applies holiday scope to both fifth-business-day values', () => {
+    const json = runCli(['quinto-dia-util', '2026-12', '--json', '--cidade', 'sao paulo']);
+    interface QuintoResult {
+      readonly diaUtilSegSex: string;
+      readonly diaUtilSalario: string;
+    }
+    // Both calendars still land on the same December dates for this scope.
+    const parsed = JSON.parse(json.stdout) as QuintoResult;
+    expect(parsed.diaUtilSegSex).toBe('2026-12-07');
+    expect(parsed.diaUtilSalario).toBe('2026-12-05');
   });
 
   it('fails clearly on invalid business-day arguments', () => {

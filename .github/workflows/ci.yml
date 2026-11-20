@@ -26,4 +26,7 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run build
+      # CLI binary is also (re)built by vitest globalSetup via the tsup API.
+      # No step derives npm's location from process.execPath, so this works on
+      # ubuntu, windows and macos with node 20/22/24.
       - run: npm run test:coverage

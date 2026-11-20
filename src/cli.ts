@@ -10,6 +10,7 @@ import {
   isBusinessDay,
   isUF,
   nthBusinessDayOfMonth,
+  quintoDiaUtilSalario,
   toISO,
   toPlainDate,
   type CalendarKind,
@@ -280,21 +281,26 @@ function runQuintoDiaUtil(
     fail(error instanceof Error ? error.message : String(error));
     return;
   }
-  const result = nthBusinessDayOfMonth(year, month, 5, {
-    ...parsed.options,
-    calendar: parsed.calendar,
-  });
+  const calendarOptions = { ...parsed.options, calendar: parsed.calendar };
+  // Civil rule: Monday to Friday count (nthBusinessDayOfMonth keeps this meaning).
+  const civil = nthBusinessDayOfMonth(year, month, 5, calendarOptions);
+  // Legal salary deadline: Saturday counts (CLT art. 459, § 1º + IN SRT 01/1989).
+  const salario = quintoDiaUtilSalario(year, month, calendarOptions);
+  const label = `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`;
   if (flags.has('--json')) {
     printJson({
-      mes: `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`,
+      mes: label,
       diaUtil: 5,
-      data: toISO(result),
       calendario: parsed.calendar,
+      diaUtilSegSex: toISO(civil),
+      diaUtilSalario: toISO(salario),
     });
     return;
   }
-  const label = `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`;
-  process.stdout.write(`5º dia útil de ${label}: ${toISO(result)}\n`);
+  process.stdout.write(`5º dia útil (seg–sex) de ${label}: ${toISO(civil)}\n`);
+  process.stdout.write(
+    `5º dia útil para salário (sábado incluso, CLT art. 459 § 1º) de ${label}: ${toISO(salario)}\n`,
+  );
 }
 
 function run(args: readonly string[]): void {

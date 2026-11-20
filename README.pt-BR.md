@@ -122,14 +122,24 @@ import {
   businessDaysBetween,
   isBusinessDay,
   nthBusinessDayOfMonth,
+  quintoDiaUtilSalario,
 } from 'diautil';
 
 isBusinessDay('2026-11-20'); // false — Zumbi, feriado nacional desde 2024
 addBusinessDays('2026-11-19', 1); // 2026-11-23
 addBusinessDays('2026-11-21', 0, { roll: 'backward' }); // 2026-11-19
 businessDaysBetween('2026-11-19', '2026-11-25', { inclusive: true }); // 4
-nthBusinessDayOfMonth(2026, 12, 5); // 5º dia útil — CLT art. 459
+nthBusinessDayOfMonth(2026, 12, 5); // 2026-12-07 — 5º dia útil seg–sex
+quintoDiaUtilSalario(2026, 12); // 2026-12-05 — prazo legal de pagamento (CLT art. 459, § 1º)
 ```
+
+`nthBusinessDayOfMonth` usa o fim de semana do calendário (sábado e domingo por padrão). O prazo
+legal do salário é diferente: conforme interpretação oficial do Ministério do Trabalho (Instrução
+Normativa SRT nº 01, de 07/11/1989, item I — reafirmada pela IN/MTP nº 2/2021), o **sábado entra**
+na contagem e apenas domingos e feriados (inclusive municipais) são excluídos. Por isso
+`quintoDiaUtilSalario` ignora a opção `weekends` e fixa o fim de semana como somente domingo:
+dezembro/2026 resulta em `2026-12-05` para o salário e `2026-12-07` para a contagem seg–sex. Fonte:
+[gov.br/MTE IN nº 2/2021](https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/inspecao-do-trabalho/areas-de-atuacao/documentos-pdf/in-2-de-8-denovembro-de-2021.pdf).
 
 `createCalendar` devolve um calendário imutável e em cache. `extraHolidays` e `removeHolidays`
 permitem personalizar o calendário. `boletoDueDateAdjust`, `settlementDate`, `settlementD1` e
@@ -149,7 +159,9 @@ diautil --version
 ```
 
 Saída em pt-BR por padrão; `--json` produz saída estável para máquinas. `entre` aceita
-`--inclusive` e `--customarios` ativa a Sexta-feira da Paixão costumeira.
+`--inclusive` e `--customarios` ativa a Sexta-feira da Paixão costumeira. `quinto-dia-util` mostra
+as duas datas: a comum seg–sex (`diaUtilSegSex`) e a do salário com sábado computado
+(`diaUtilSalario`).
 
 ## Desenvolvimento
 

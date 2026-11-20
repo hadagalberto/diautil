@@ -3,6 +3,8 @@ import {
   BANKING_GOOD_FRIDAY_SOURCE,
   BANKING_SOURCE,
   CUSTOMARY_GOOD_FRIDAY_SOURCE,
+  QUINTO_DIA_SALARIO_LAW,
+  QUINTO_DIA_SALARIO_SOURCE,
   CAPITALS,
   UF_LIST,
   municipalRulesByCapital,
@@ -68,5 +70,15 @@ describe('source audit — official law texts only', () => {
     expect(BANKING_SOURCE).toContain('febraban.org.br');
     expect(BANKING_GOOD_FRIDAY_SOURCE).toContain('b3.com.br');
     expect(CUSTOMARY_GOOD_FRIDAY_SOURCE).toContain('planalto.gov.br');
+  });
+
+  it('cites the official MTE source for Saturday counting in the salary deadline', () => {
+    expect(QUINTO_DIA_SALARIO_SOURCE).toContain('gov.br/trabalho-e-emprego');
+    expect(QUINTO_DIA_SALARIO_SOURCE).toMatch(/^https:\/\//);
+    expect(QUINTO_DIA_SALARIO_LAW).toContain('459');
+    expect(QUINTO_DIA_SALARIO_LAW).toContain('Instrução Normativa SRT nº 01');
+    expect(QUINTO_DIA_SALARIO_LAW).toContain('sábado');
+    expect(QUINTO_DIA_SALARIO_LAW).toContain('domingo');
+    expect(QUINTO_DIA_SALARIO_LAW).toContain('municipal');
   });
 });
